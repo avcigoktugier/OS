@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5 — Süreç Senkronizasyonu | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html" class="active"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 5</span>
+    </nav>
+    <h1>🔒 Chapter 5: Süreç Senkronizasyonu</h1>
+    <p class="ch-intro">Race condition, kritik bölge, mutex, semaphore, monitor, klasik senkronizasyon problemleri ve deadlock konularını kapsamlı öğren.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#racecon">Race Condition</a></li>
+          <li><a href="#critical">Kritik Bölge</a></li>
+          <li><a href="#peterson">Peterson Çözümü</a></li>
+          <li><a href="#hardware">Donanım Çözümleri</a></li>
+          <li><a href="#mutex">Mutex Lock</a></li>
+          <li><a href="#semaphore">Semaphore</a></li>
+          <li><a href="#classic">Klasik Problemler</a></li>
+          <li><a href="#monitor">Monitor</a></li>
+          <li><a href="#deadlock">Deadlock</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- Race Condition -->
+      <section class="section" id="racecon">
+        <div class="section-label">Sorun</div>
+        <h2>Race Condition</h2>
+
+        <div class="callout danger">
+          <div class="callout-icon">🚨</div>
+          <div class="callout-body">
+            <h4>counter++ Tek Komut Değildir!</h4>
+            <p><code>counter++</code> üç makine komutuna karşılık gelir:</p>
+            <ol>
+              <li><code>register = counter</code> — değeri register'a yükle</li>
+              <li><code>register = register + 1</code> — register'ı artır</li>
+              <li><code>counter = register</code> — geri yaz</li>
+            </ol>
+            <p><strong>İki süreç aynı anda çalışırsa:</strong> counter=5 iken sonuç 4 veya 6 olabilir!</p>
+          </div>
+        </div>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Interleaving Örneği (counter = 5)</div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Adım</th><th>Producer (counter++)</th><th>Consumer (counter--)</th><th>counter</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>S0</td><td>reg_P = counter → <strong>5</strong></td><td></td><td>5</td></tr>
+              <tr><td>S1</td><td>reg_P = reg_P + 1 → <strong>6</strong></td><td></td><td>5</td></tr>
+              <tr><td>S2</td><td></td><td>reg_C = counter → <strong>5</strong></td><td>5</td></tr>
+              <tr><td>S3</td><td></td><td>reg_C = reg_C - 1 → <strong>4</strong></td><td>5</td></tr>
+              <tr><td>S4</td><td>counter = reg_P → yazıldı</td><td></td><td>6</td></tr>
+              <tr><td>S5</td><td></td><td>counter = reg_C → yazıldı</td><td><strong style="color:var(--red)">4 ← YANLIŞ!</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Critical Section -->
+      <section class="section" id="critical">
+        <div class="section-label">Çözüm Koşulları</div>
+        <h2>Kritik Bölge Problemi</h2>
+        <p>Kritik bölge (critical section), paylaşılan değişkene erişilen kod parçasıdır. Geçerli bir çözüm 3 koşulu sağlamalıdır:</p>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-icon">🔒</div>
+            <h4>1. Mutual Exclusion</h4>
+            <p>Bir süreç kritik bölgedeyken, başka hiçbir süreç kritik bölgesine giremez. Temel güvenlik koşulu.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">▶️</div>
+            <h4>2. Progress (İlerleme)</h4>
+            <p>Kritik bölge boşsa ve girmek isteyen süreç varsa, bu seçim sonsuza kadar ertelenebilmez. Starvation'a yol açmaz.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">⏰</div>
+            <h4>3. Bounded Waiting</h4>
+            <p>Sınırlı bekleme: bir süreç kritik bölgeye girmek için sonsuz bekleyemez. Belirli bir sınır içinde sırası gelmelidir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Peterson's Solution -->
+      <section class="section" id="peterson">
+        <div class="section-label">Yazılım Çözümü</div>
+        <h2>Peterson'ın Çözümü</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>İki Süreç için Yazılım Tabanlı Çözüm</h4>
+            <p><strong>turn</strong> ve <strong>flag[]</strong> değişkenleri kullanır. Tüm 3 koşulu sağlar, ancak modern işlemcilerde instruction reordering sorunu yaşanabilir.</p>
+          </div>
+        </div>
+
+        <pre class="code-block"><code>// Process Pi (i=0 veya 1; j = karşı taraf)
+do {
+    flag[i] = true;           // Hazırım: girmek istiyorum
+    turn = j;                 // Önce j'ye fırsat ver (kibarlık)
+    while (flag[j] && turn == j)
+        ; // Meşgulse bekle (busy-wait)
+
+    // ——— Kritik Bölge ———
+    // Paylaşılan kaynağa güvenli erişim
+
+    flag[i] = false;          // Çıkış: artık burada değilim
+
+    // ——— Geri Kalan Bölge ———
+} while (true);</code></pre>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">flag[i] = true</div>
+            <div class="def-desc">Süreç i'nin kritik bölgeye girmek istediğini bildirir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">turn = j</div>
+            <div class="def-desc">Çakışma durumunda diğer sürece öncelik verir; deadlock ve starvation önler.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Modern Sorun</div>
+            <div class="def-desc">Modern derleyici ve CPU'lar bağımsız komutların sırasını değiştirebilir (instruction reordering / memory reordering). Memory barrier gerektirir.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hardware Solutions -->
+      <section class="section" id="hardware">
+        <div class="section-label">Donanım</div>
+        <h2>Donanım Tabanlı Çözümler</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Interrupt Masking</div>
+            <div class="def-desc">Uniprocessor'da interrupt'ları devre dışı bırak. Kritik bölge boyunca context switch engellenir. Çok işlemcili sistemlerde yetersiz — diğer CPU'yu etkilemez.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">test_and_set()</div>
+            <div class="def-desc">Atomik operasyon: kilidi okur ve <code>true</code> set eder. Spinlock (döngüsel kilit) yapımında kullanılır. Bounded waiting garanti etmez.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">compare_and_swap() (CAS)</div>
+            <div class="def-desc">Beklenen değerle eşleşirse değiştirir — atomik. Daha güçlü: birden fazla sonuç durumu. Modern CPU'larda doğrudan desteklenir (x86: CMPXCHG).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Atomic Variables</div>
+            <div class="def-desc">Sayaçlar için atomik increment/decrement. Java'da <code>AtomicInteger</code>, C'de <code>_Atomic</code>. Lock-free basit işlemler için yeterli.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mutex -->
+      <section class="section" id="mutex">
+        <div class="section-label">Kilit</div>
+        <h2>Mutex Lock</h2>
+
+        <p>En basit senkronizasyon aracı. <strong>acquire()</strong> ve <strong>release()</strong> atomik operasyonlardır.</p>
+
+        <pre class="code-block"><code>// Kullanım kalıbı
+mutex_lock.acquire();
+    // ——— Kritik Bölge ———
+mutex_lock.release();</code></pre>
+
+        <div class="callout warn">
+          <div class="callout-icon">🔄</div>
+          <div class="callout-body">
+            <h4>Spinlock — Busy-Wait</h4>
+            <p>Mutex beklerken süreç döngüde döner (CPU zaman harcar). <strong>Kısa bekleme için verimli</strong> — context switch maliyetinden düşük. Uzun bekleme için semaphore tercih edilir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Semaphore -->
+      <section class="section" id="semaphore">
+        <div class="section-label">Semafor</div>
+        <h2>Semaphore</h2>
+
+        <p>Semaphore, bir tam sayı değişkenidir. Yalnızca iki atomik operasyonla erişilir:</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">wait(S) / P(S)</div>
+            <div class="def-desc">S > 0 ise S'i azalt ve devam et. S = 0 ise süreç bekleme kuyruğuna alınır (CPU serbest bırakılır).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">signal(S) / V(S)</div>
+            <div class="def-desc">S'i artır. Bekleme kuyruğunda süreç varsa birini uyandırır (ready queue'ya taşır).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Binary Semaphore (Mutex)</div>
+            <div class="def-desc">S değeri yalnızca 0 veya 1. Mutex lock gibi davranır; mutual exclusion sağlar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Counting Semaphore</div>
+            <div class="def-desc">S değeri 0'dan N'e. N adet kaynağın yönetimi için. Örnek: 3 yazıcı, S=3 ile başlatılır.</div>
+          </div>
+        </div>
+
+        <!-- Semaphore Demo -->
+        <div id="sem-demo" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin:1.5rem 0;text-align:center">
+          <div style="font-weight:700;margin-bottom:0.75rem;color:var(--text)">Semaphore Simülasyonu</div>
+          <div style="font-size:2.5rem;font-weight:700;color:var(--accent);margin-bottom:0.75rem" id="sem-counter">3</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Mevcut değer (N=3 olarak başlatıldı)</div>
+          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" id="sem-wait">wait(S) — P</button>
+            <button class="btn btn-outline" id="sem-signal">signal(S) — V</button>
+            <button class="btn btn-outline" id="sem-reset" style="border-color:var(--muted);color:var(--muted)">Sıfırla</button>
+          </div>
+          <div id="sem-status" style="margin-top:0.75rem;font-size:0.85rem;color:var(--muted);min-height:1.2rem"></div>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-icon">⛔</div>
+          <div class="callout-body">
+            <h4>Semaphore Kullanım Hataları</h4>
+            <ul>
+              <li><strong>signal() → wait() sırası</strong> (yanlış sıra): mutual exclusion ihlali — ikisi birden kritik bölgede.</li>
+              <li><strong>wait() → wait() sırası</strong> (iki kez wait): deadlock — kimse ilerleyemez.</li>
+              <li><strong>wait() veya signal() unutulursa</strong>: starvation veya deadlock oluşur.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Classic Problems -->
+      <section class="section" id="classic">
+        <div class="section-label">Klasik</div>
+        <h2>Klasik Senkronizasyon Problemleri</h2>
+
+        <div class="tab-container">
+          <div class="tab-list" role="tablist">
+            <button class="tab-btn active" role="tab" data-tab="boundbuf">Bounded-Buffer</button>
+            <button class="tab-btn" role="tab" data-tab="readers">Readers-Writers</button>
+            <button class="tab-btn" role="tab" data-tab="dining">Dining Philosophers</button>
+          </div>
+
+          <div class="tab-panel active" data-panel="boundbuf">
+            <h4>Üretici-Tüketici (Bounded-Buffer)</h4>
+            <p>N boyutlu dairesel buffer; üretici ekler, tüketici çıkarır. Eş zamanlı erişimi senkronize etmek gerekir.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">mutex = 1</div>
+                <div class="def-desc">Buffer'a eşzamanlı erişimi engeller (binary semaphore).</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">full = 0</div>
+                <div class="def-desc">Dolu slot sayısı. Tüketici wait(full) ile bekler.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">empty = N</div>
+                <div class="def-desc">Boş slot sayısı. Üretici wait(empty) ile bekler.</div>
+              </div>
+            </div>
+            <pre class="code-block"><code>// Üretici
+wait(empty); wait(mutex);
+  buffer[in] = item; in = (in+1) % N;
+signal(mutex); signal(full);
+
+// Tüketici
+wait(full); wait(mutex);
+  item = buffer[out]; out = (out+1) % N;
+signal(mutex); signal(empty);</code></pre>
+          </div>
+
+          <div class="tab-panel" data-panel="readers">
+            <h4>Readers-Writers Problemi</h4>
+            <p>Bir veri kümesini birden fazla okuyucu aynı anda okuyabilir; fakat yazar münhasır erişim ister.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">İlk Okuyucu-Yazar</div>
+                <div class="def-desc">Okuyucu beklemez; yazar starvation'a uğrayabilir.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">İkinci Okuyucu-Yazar</div>
+                <div class="def-desc">Yazar hazırsa yeni okuyucu bekler; okuyucu starvation riski.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Semaforlar</div>
+                <div class="def-desc"><code>mutex</code> (read_count koruması) + <code>rw_mutex</code> (yazar münhasırlığı) + <code>read_count</code> sayacı.</div>
+              </div>
+            </div>
+            <div class="callout warn">
+              <div class="callout-icon">⚠️</div>
+              <div class="callout-body">
+                <h4>Starvation Riski</h4>
+                <p>Her iki çözümde de bir taraf starvation'a uğrayabilir. Adil çözüm için readers-writers lock (RWLock) kullanılır.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="dining">
+            <h4>Dining Philosophers (Yemek Yiyen Filozoflar)</h4>
+            <p>5 filozof, 5 çubuk, yuvarlak masa. Her filozofun yiyebilmesi için iki çubuğa ihtiyacı var. Klasik deadlock ve starvation örneği.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">Naif Çözümün Sorunu</div>
+                <div class="def-desc">Herkes sol çubuğu alırsa: deadlock (dairesel bekleme). Herkes aynı anda aç olursa: starvation.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Çözüm 1: Maksimum 4 Oturur</div>
+                <div class="def-desc">En az bir filozofun iki çubuğu da alması garanti — deadlock önlenir.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Çözüm 2: Her İkisi Müsaitken Al</div>
+                <div class="def-desc">Tek atomik işlemde her iki çubuğu birden al (mutex ile korunur).</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Çözüm 3: Asimetrik Sıra</div>
+                <div class="def-desc">Tek numaralı filozoflar önce sol, çift numaralılar önce sağ çubuğu alır. Dairesel bekleme kırılır.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Monitor -->
+      <section class="section" id="monitor">
+        <div class="section-label">Yüksek Seviye</div>
+        <h2>Monitor</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">🏗️</div>
+          <div class="callout-body">
+            <h4>Monitor Nedir?</h4>
+            <p>Yüksek seviyeli soyutlama. Aynı anda yalnızca bir süreç monitörde aktif olabilir. Mutual exclusion <strong>otomatik</strong> sağlanır — programcı wait/signal sırasını yönetmek zorunda değildir.</p>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Condition Variable (x)</div>
+            <div class="def-desc">Monitor içinde bekleme için: <code>x.wait()</code> — signal gelene kadar süreci askıya alır. <code>x.signal()</code> — askıdaki bir süreci uyandırır (kimse yoksa etkisizdir).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Java synchronized</div>
+            <div class="def-desc">Java'da <code>synchronized</code> anahtar kelimesi monitor semantiği sağlar. <code>wait()</code>, <code>notify()</code>, <code>notifyAll()</code> condition variable işlemleri.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Semaphore ile Farkı</div>
+            <div class="def-desc">Monitor'de mutual exclusion derleyici garantisiyle otomatik. Semaphore'da wait/signal sırasını programcı yönetir — hata riski yüksek.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deadlock -->
+      <section class="section" id="deadlock">
+        <div class="section-label">Kilitlenme</div>
+        <h2>Deadlock (Kilitlenme)</h2>
+
+        <div class="callout danger">
+          <div class="callout-icon">🔴</div>
+          <div class="callout-body">
+            <h4>Deadlock için 4 Koşul — Hepsi Aynı Anda Olmalı</h4>
+            <ol>
+              <li><strong>Mutual Exclusion:</strong> Kaynak aynı anda yalnızca tek süreç tarafından tutulabilir.</li>
+              <li><strong>Hold and Wait:</strong> Süreç, elindeki kaynağı tutarken başka kaynak bekler.</li>
+              <li><strong>No Preemption:</strong> Kaynak yalnızca sürecin kendisi gönüllü bırakır; dışarıdan alınamaz.</li>
+              <li><strong>Circular Wait:</strong> P0 → P1 → ... → Pn → P0 şeklinde döngüsel bekleme zinciri.</li>
+            </ol>
+          </div>
+        </div>
+
+        <h3>Deadlock Yönetim Yöntemleri</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Yöntem</th>
+              <th>Fikir</th>
+              <th>Örnek / Not</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="hl">Prevention (Önleme)</td>
+              <td>4 koşuldan birini ortadan kaldır</td>
+              <td>Kaynakları önceden toplu al; kaynak sıralaması</td>
+            </tr>
+            <tr>
+              <td class="hl">Avoidance (Kaçınma)</td>
+              <td>Güvenli durumda kal</td>
+              <td>Banker's Algorithm; kaynak tahsis grafiği</td>
+            </tr>
+            <tr>
+              <td class="hl">Detection &amp; Recovery</td>
+              <td>Deadlock oluşunca tespit et, kurtar</td>
+              <td>Bekleme döngüsü tespiti; kaynak geri alma</td>
+            </tr>
+            <tr>
+              <td class="hl">Ignore (Devekuşu)</td>
+              <td>Deadlock'u görmezden gel</td>
+              <td>UNIX, Linux, Windows — nadir deadlock tolere edilir</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <div class="callout-icon">🏦</div>
+          <div class="callout-body">
+            <h4>Banker's Algorithm</h4>
+            <p>Güvenli durum: tüm süreçlerin bir çalışma sırası bulunabilir. Kaçınma algoritması: yeni kaynak talebi güvenli durumda kalıyorsa kabul edilir, aksi hâlde reddedilir. Yüksek overhead nedeniyle pratikte nadiren kullanılır.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 5 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz5">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">Kritik bölge çözümünün 3 koşulu nedir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">1) Mutual Exclusion: aynı anda tek süreç. 2) Progress: boşsa girmek isteyen bekletilemez. 3) Bounded Waiting: süreç sonsuz bekleyemez.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="ch4.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Önceki Chapter</div>
+            <div class="title">Thread'ler</div>
+          </div>
+        </a>
+        <a href="ch6.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Sonraki Chapter</div>
+            <div class="title">CPU Zamanlama</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 5: Süreç Senkronizasyonu</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Semaphore demo
+  var semVal = 3;
+  var semMax = 3;
+  var semCounter = document.getElementById('sem-counter');
+  var semStatus = document.getElementById('sem-status');
+
+  function updateSem() {
+    if (semCounter) semCounter.textContent = semVal;
+    if (semVal <= 0) {
+      semCounter.style.color = 'var(--red)';
+    } else if (semVal === semMax) {
+      semCounter.style.color = 'var(--green)';
+    } else {
+      semCounter.style.color = 'var(--accent)';
+    }
+  }
+
+  var waitBtn = document.getElementById('sem-wait');
+  var signalBtn = document.getElementById('sem-signal');
+  var resetBtn = document.getElementById('sem-reset');
+
+  if (waitBtn) {
+    waitBtn.addEventListener('click', function() {
+      if (semVal > 0) {
+        semVal--;
+        semStatus.textContent = 'wait(S): S azaltıldı → ' + semVal + '. Süreç devam eder.';
+        semStatus.style.color = 'var(--accent)';
+      } else {
+        semStatus.textContent = 'wait(S): S=0, süreç BLOKE! Bekleme kuyruğuna alındı.';
+        semStatus.style.color = 'var(--red)';
+      }
+      updateSem();
+    });
+  }
+  if (signalBtn) {
+    signalBtn.addEventListener('click', function() {
+      if (semVal < semMax) {
+        semVal++;
+        semStatus.textContent = 'signal(S): S artırıldı → ' + semVal + '. Bekleyen varsa uyandırıldı.';
+        semStatus.style.color = 'var(--green)';
+      } else {
+        semStatus.textContent = 'signal(S): S zaten maksimumda (' + semMax + '). Kimse beklemiyor.';
+        semStatus.style.color = 'var(--muted)';
+      }
+      updateSem();
+    });
+  }
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      semVal = semMax;
+      semStatus.textContent = 'Sıfırlandı: S = ' + semMax;
+      semStatus.style.color = 'var(--muted)';
+      updateSem();
+    });
+  }
+  updateSem();
+
+  // Quiz
+  const questions = [
+    { q: 'Kritik bölge çözümünün 3 koşulu nedir?', a: '1) Mutual Exclusion: aynı anda tek süreç. 2) Progress: boşsa girmek isteyen bekletilemez. 3) Bounded Waiting: süreç sonsuz bekleyemez.' },
+    { q: 'Mutex lock ile semaphore arasındaki fark nedir?', a: 'Mutex binary\'dir (0/1) ve kilidi alan süreç serbest bırakır (sahiplik var). Semaphore daha genel, counting, herhangi bir süreç signal verebilir, sahiplik yoktur.' },
+    { q: 'Bounded-Buffer\'da kaç semafor kullanılır?', a: '3: mutex=1 (buffer\'a eşzamanlı erişim), full=0 (dolu slot; tüketici bekler), empty=N (boş slot; üretici bekler).' },
+    { q: 'Deadlock için 4 koşul nedir?', a: 'Mutual Exclusion + Hold and Wait + No Preemption + Circular Wait. Dördü aynı anda olmalı.' },
+    { q: 'Monitor ile semaphore arasındaki fark nedir?', a: 'Monitor\'de mutual exclusion otomatik sağlanır. Semaphore\'da programcı wait/signal sırasını doğru kullanmak zorundadır; hata riski yüksektir.' },
+  ];
+  initQuiz('quiz5', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>

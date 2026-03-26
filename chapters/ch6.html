@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6 — CPU Zamanlama | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html" class="active"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 6</span>
+    </nav>
+    <h1>📊 Chapter 6: CPU Zamanlama</h1>
+    <p class="ch-intro">CPU zamanlama algoritmaları (FCFS, SJF, Priority, Round Robin, Multilevel), real-time scheduling ve OS örneklerini kapsamlı öğren.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#concepts">Temel Kavramlar</a></li>
+          <li><a href="#criteria">Zamanlama Kriterleri</a></li>
+          <li><a href="#fcfs">FCFS</a></li>
+          <li><a href="#sjf">SJF / SRTF</a></li>
+          <li><a href="#priority">Priority</a></li>
+          <li><a href="#rr">Round Robin</a></li>
+          <li><a href="#multilevel">Multilevel Queue</a></li>
+          <li><a href="#realtime">Real-Time</a></li>
+          <li><a href="#evaluation">Değerlendirme</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- Basic Concepts -->
+      <section class="section" id="concepts">
+        <div class="section-label">Temel</div>
+        <h2>Temel Kavramlar</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>CPU Zamanlama Nedir?</h4>
+            <p>CPU zamanlaması, çoklu programlamanın temelidir. <strong>CPU–I/O Burst Cycle:</strong> süreçler CPU çalıştırma (CPU burst) ve I/O bekleme (I/O burst) döngüsü içindedir. Zamanlayıcı bu döngüyü en verimli şekilde yönetir.</p>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Short-term (CPU) Scheduler</div>
+            <div class="def-desc">Ready queue'dan bir süreci seçer ve CPU'ya atar. Milisaniye bazında çalışır — en sık çağrılan bileşen. Hız kritik.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Dispatcher</div>
+            <div class="def-desc">Seçilen süreci CPU'ya teslim eder: context switch, user mode geçişi, program counter'a atlama. <strong>Dispatch latency</strong> = bu işlemin maliyeti.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Preemptive Zamanlama</div>
+            <div class="def-desc">OS, CPU'yu süreçten geri alabilir (interrupt, time slice dolması, yüksek öncelikli süreç). Modern OS'ların çoğu preemptive çalışır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Non-preemptive Zamanlama</div>
+            <div class="def-desc">Süreç CPU'yu bırakana kadar çalışır (I/O isteği veya exit). Basit; ancak uzun süreçler kısa olanları bloklar.</div>
+          </div>
+        </div>
+
+        <h3>Ne Zaman Zamanlama Kararı?</h3>
+        <table class="data-table">
+          <thead>
+            <tr><th>Durum</th><th>Tür</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Running → Waiting (I/O isteği)</td><td>Non-preemptive</td></tr>
+            <tr><td>Running → Ready (interrupt / time slice)</td><td>Preemptive</td></tr>
+            <tr><td>Waiting → Ready (I/O tamamlandı)</td><td>Preemptive</td></tr>
+            <tr><td>Terminated</td><td>Non-preemptive</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Scheduling Criteria -->
+      <section class="section" id="criteria">
+        <div class="section-label">Kriterler</div>
+        <h2>Zamanlama Kriterleri</h2>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-icon">⚡</div>
+            <h4>CPU Utilization</h4>
+            <p>CPU'yu maksimum meşgul tut. Teorik %100, pratikte %40–90 arası. → <strong>MAX</strong></p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">📈</div>
+            <h4>Throughput</h4>
+            <p>Birim zamanda tamamlanan süreç sayısı. Batch sistemlerde önemli. → <strong>MAX</strong></p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">⏱️</div>
+            <h4>Turnaround Time</h4>
+            <p>Submission'dan completion'a toplam süre. Ready + CPU + I/O bekleme. → <strong>MIN</strong></p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">⏳</div>
+            <h4>Waiting Time</h4>
+            <p>Ready queue'da bekleme toplamı. Zamanlama algoritması yalnızca bunu etkiler. → <strong>MIN</strong></p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">💬</div>
+            <h4>Response Time</h4>
+            <p>İlk yanıtın gelmesi (interactive sistemler için kritik). → <strong>MIN</strong></p>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">📐</div>
+          <div class="callout-body">
+            <h4>Temel Formüller</h4>
+            <ul>
+              <li><strong>Turnaround</strong> = Completion − Arrival</li>
+              <li><strong>Waiting</strong> = Turnaround − Burst</li>
+              <li><strong>Response</strong> = First_Run − Arrival</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- FCFS -->
+      <section class="section" id="fcfs">
+        <div class="section-label">Algoritma 1</div>
+        <h2>FCFS — First-Come, First-Served</h2>
+        <p>İlk gelen ilk çalışır. Non-preemptive. Ready queue'ya FIFO sırasıyla eklenir. Uygulaması en kolay algoritmadır.</p>
+
+        <h3>Örnek: P1(24ms), P2(3ms), P3(3ms) — Sıra: P1,P2,P3</h3>
+        <div class="gantt-chart">
+          <div class="gantt-row">
+            <div class="gantt-label">Süreç</div>
+            <div class="gantt-bar-container">
+              <div style="background:var(--accent);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:24;border-radius:var(--r-sm) 0 0 var(--r-sm)">P1 (24)</div>
+              <div style="background:var(--green);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:3">P2 (3)</div>
+              <div style="background:var(--orange);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:3;border-radius:0 var(--r-sm) var(--r-sm) 0">P3 (3)</div>
+            </div>
+          </div>
+          <div class="gantt-row" style="font-size:0.75rem;color:var(--muted)">
+            <div class="gantt-label"></div>
+            <div class="gantt-bar-container" style="justify-content:space-between;padding:0 0.2rem">
+              <span>0</span><span>24</span><span>27</span><span>30</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:0.75rem;font-size:var(--text-sm);color:var(--muted)">Waiting: P1=0, P2=24, P3=27 → <strong>Ortalama = 17ms</strong></p>
+
+        <h3>Aynı süreçler, sıra P2,P3,P1:</h3>
+        <div class="gantt-chart">
+          <div class="gantt-row">
+            <div class="gantt-label">Süreç</div>
+            <div class="gantt-bar-container">
+              <div style="background:var(--green);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:3;border-radius:var(--r-sm) 0 0 var(--r-sm)">P2 (3)</div>
+              <div style="background:var(--orange);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:3">P3 (3)</div>
+              <div style="background:var(--accent);color:white;padding:0.4rem;text-align:center;font-weight:700;flex:24;border-radius:0 var(--r-sm) var(--r-sm) 0">P1 (24)</div>
+            </div>
+          </div>
+          <div class="gantt-row" style="font-size:0.75rem;color:var(--muted)">
+            <div class="gantt-label"></div>
+            <div class="gantt-bar-container" style="justify-content:space-between;padding:0 0.2rem">
+              <span>0</span><span>3</span><span>6</span><span>30</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:0.75rem;font-size:var(--text-sm);color:var(--muted)">Waiting: P2=0, P3=3, P1=6 → <strong>Ortalama = 3ms ✓ Çok daha iyi!</strong></p>
+
+        <div class="callout warn">
+          <div class="callout-icon">🚛</div>
+          <div class="callout-body">
+            <h4>Convoy Effect (Konvoy Etkisi)</h4>
+            <p>Uzun burst'lü süreç öne geçtiğinde, kısa süreçler çok uzun bekler. Hem CPU hem I/O kullanımını düşürür.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SJF -->
+      <section class="section" id="sjf">
+        <div class="section-label">Algoritma 2</div>
+        <h2>SJF / SRTF — Shortest-Job-First</h2>
+        <p>En kısa CPU burst'e sahip süreci seçer. <strong>Minimum ortalama bekleme süresi</strong> için optimaldir.</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">SJF — Non-preemptive</div>
+            <div class="def-desc">Seçilen süreç CPU burst'ü bitene kadar çalışır. Daha kısa süreç gelirse bekler.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">SRTF — Shortest Remaining Time First</div>
+            <div class="def-desc">Preemptive SJF. Yeni süreç geldiğinde kalan burst süresi karşılaştırılır; daha kısa olan öne geçer.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Sorun: Burst Süre Bilinmez</div>
+            <div class="def-desc">Gelecekteki CPU burst pratikte bilinmez. Geçmiş burst'lardan <strong>üstel ortalama</strong> ile tahmin edilir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Starvation</div>
+            <div class="def-desc">Uzun burst'lü süreçler hiç CPU alamayabilir — sürekli kısa süreçler öne geçer. <strong>Aging</strong> ile çözülür.</div>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">📐</div>
+          <div class="callout-body">
+            <h4>Üstel Ortalama ile Burst Tahmini</h4>
+            <p style="font-size:1.05rem;font-weight:700">τ(n+1) = α · t(n) + (1−α) · τ(n)</p>
+            <ul>
+              <li><strong>t(n)</strong>: gerçek n. CPU burst süresi</li>
+              <li><strong>τ(n)</strong>: öngörülen n. CPU burst süresi</li>
+              <li><strong>α = 0.5</strong>: tipik değer — geçmiş ve tahmin eşit ağırlıklı</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Priority -->
+      <section class="section" id="priority">
+        <div class="section-label">Algoritma 3</div>
+        <h2>Priority Scheduling</h2>
+        <p>Her sürece bir öncelik sayısı atanır. <strong>En yüksek öncelik (genellikle en küçük sayı) önce çalışır.</strong></p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">SJF ile İlişki</div>
+            <div class="def-desc">SJF, öncelik = 1/(burst süresi) olan özel bir priority scheduling'dir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Internal vs External Priority</div>
+            <div class="def-desc">Internal: zaman sınırları, bellek gereksinimleri (OS belirler). External: kullanıcı veya yönetici belirler.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Starvation Sorunu</div>
+            <div class="def-desc">Düşük öncelikli süreç, sürekli yüksek öncelikli süreçler gelince hiç CPU alamayabilir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Çözüm: Aging</div>
+            <div class="def-desc">Bekleme süresi arttıkça öncelik yavaşça artırılır. Süreç eninde sonunda yeterli önceliğe ulaşır ve çalışır.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Round Robin -->
+      <section class="section" id="rr">
+        <div class="section-label">Algoritma 4</div>
+        <h2>Round Robin (RR)</h2>
+        <p>Her süreç <strong>q (time quantum)</strong> kadar CPU alır, ardından preempt edilir ve ready queue'nun sonuna eklenir. Time-sharing sistemler için tasarlanmıştır.</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Bekleme Sınırı</div>
+            <div class="def-desc">n süreç, q quantum: bir sürecin maksimum bekleme süresi = (n−1)×q</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">q Seçiminin Önemi</div>
+            <div class="def-desc"><strong>q büyükse</strong> → FCFS gibi davranır. <strong>q küçükse</strong> → context switch overhead aşırı artar. Kural: burst'lerin %80'i q'dan kısa olmalı; tipik q = 10–100ms</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Response vs Turnaround</div>
+            <div class="def-desc">Response süresi mükemmel (etkileşim için iyi), ancak ortalama turnaround SJF'den yüksek olabilir.</div>
+          </div>
+        </div>
+
+        <h3>Gantt Diagramı: P1(24), P2(3), P3(3) — q=4</h3>
+        <div class="gantt-chart">
+          <div class="gantt-row">
+            <div class="gantt-label">Süreç</div>
+            <div class="gantt-bar-container" style="flex-wrap:wrap;gap:2px">
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+              <div style="background:var(--green);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:3;min-width:25px">P2</div>
+              <div style="background:var(--orange);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:3;min-width:25px">P3</div>
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+              <div style="background:var(--accent);color:white;padding:0.3rem;text-align:center;font-size:0.75rem;font-weight:700;flex:4;min-width:30px">P1</div>
+            </div>
+          </div>
+          <div class="gantt-row" style="font-size:0.7rem;color:var(--muted)">
+            <div class="gantt-label"></div>
+            <div class="gantt-bar-container" style="justify-content:space-between;padding:0 0.2rem">
+              <span>0</span><span>4</span><span>7</span><span>10</span><span>14</span><span>18</span><span>22</span><span>26</span><span>30</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:0.75rem;font-size:var(--text-sm);color:var(--muted)">Waiting: P1=6 (10-4=6 ilk wait + ...), P2=4, P3=7 → P2 ve P3 çok erken tamamlandı!</p>
+      </section>
+
+      <!-- Multilevel Queue -->
+      <section class="section" id="multilevel">
+        <div class="section-label">Algoritma 5-6</div>
+        <h2>Multilevel Queue &amp; Feedback Queue</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Multilevel Queue</div>
+            <div class="def-desc">Ready queue birden fazla sıraya bölünür. Her süreç kalıcı olarak bir kuyruğa atanır. Örnek: sistem süreçleri (yüksek öncelik) / etkileşimli / batch (düşük öncelik).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Multilevel Feedback Queue</div>
+            <div class="def-desc">Süreçler kuyruklar arasında hareket edebilir. CPU-bound → aşağı indirilir. Uzun bekleyen → yukarı çıkarılır (aging). En genel ve esnek algoritma.</div>
+          </div>
+        </div>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Multilevel Feedback Queue Örneği</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;max-width:480px;margin:0 auto">
+            <div style="background:var(--red);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;font-weight:700">
+              Q0 — Round Robin (q=8ms) ← yüksek öncelik
+            </div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼ 8ms içinde bitmezse</div>
+            <div style="background:var(--orange);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;font-weight:700">
+              Q1 — Round Robin (q=16ms)
+            </div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼ 16ms içinde bitmezse</div>
+            <div style="background:var(--muted);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;font-weight:700">
+              Q2 — FCFS ← düşük öncelik
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Real-Time Scheduling -->
+      <section class="section" id="realtime">
+        <div class="section-label">Gerçek Zamanlı</div>
+        <h2>Real-Time Scheduling</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Soft Real-Time</div>
+            <div class="def-desc">Kritik süreçlere öncelik verilir ama deadline garantisi yoktur. Gecikme tolere edilebilir. Örnek: video streaming, ses işleme.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Hard Real-Time</div>
+            <div class="def-desc">Deadline mutlaka karşılanmalıdır; geç tamamlanan iş sonuçsuz sayılır. Örnek: araç freni, pacemaker, uçuş kontrol sistemi.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Rate Monotonic (RM)</div>
+            <div class="def-desc">Kısa periyot = yüksek öncelik. <strong>Statik</strong> öncelik — çalışma zamanında değişmez. Optimal static-priority algoritması. Tüm süreçleri karşılamak için CPU kullanım üst sınırı: N(2^(1/N) − 1)</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">EDF — Earliest Deadline First</div>
+            <div class="def-desc">En yakın deadline = en yüksek öncelik. <strong>Dinamik</strong> öncelik — her deadline değiştiğinde yeniden hesaplanır. Tam optimal: CPU %100 kullanıldığında bile çalışır.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OS Examples -->
+      <section class="section" id="osex">
+        <div class="section-label">Örnekler</div>
+        <h2>OS Zamanlama Örnekleri</h2>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>İşletim Sistemi</th>
+              <th>Algoritma</th>
+              <th>Detaylar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="hl">Linux CFS</td>
+              <td>Completely Fair Scheduler</td>
+              <td><code>vruntime</code> bazlı; az çalışan öncelik alır. <code>nice</code> değeri −20 ile +19 arası.</td>
+            </tr>
+            <tr>
+              <td class="hl">Windows</td>
+              <td>Priority-based preemptive</td>
+              <td>32 öncelik seviyesi. Variable class (1–15) + Real-time class (16–31). Priority boost mekanizması.</td>
+            </tr>
+            <tr>
+              <td class="hl">Solaris</td>
+              <td>6 sınıf, Multilevel Feedback</td>
+              <td>TS, IA, RT, SYS, FSS, FP sınıfları. Dispatch table ile dinamik öncelik.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Evaluation Methods -->
+      <section class="section" id="evaluation">
+        <div class="section-label">Değerlendirme</div>
+        <h2>Zamanlama Algoritması Değerlendirme</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Deterministic Modeling</div>
+            <div class="def-desc">Belirli iş yükü için analitik hesaplama. Hızlı, kolay; ancak çok özel senaryoya özgü. Little's Law ile birlikte kullanılır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Queueing Models</div>
+            <div class="def-desc">Ortalama varış hızı (λ) ve servis hızına (μ) göre ortalama bekleme hesabı. <strong>Little's Law:</strong> n = λ × W</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Simulation (Benzetim)</div>
+            <div class="def-desc">Programla sistemi simüle et; istatistik topla. Trace tape (gerçek log) ile daha gerçekçi. Pahalı ama güçlü.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Implementation</div>
+            <div class="def-desc">Algoritmayı gerçek sisteme yükle, test et. En doğru ama en pahalı yöntem. OS içine yerleştirmek karmaşık.</div>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">📐</div>
+          <div class="callout-body">
+            <h4>Little's Law</h4>
+            <p style="font-size:1.1rem;font-weight:700">n = λ × W</p>
+            <ul>
+              <li><strong>n</strong>: ortalama kuyruk uzunluğu (süreç sayısı)</li>
+              <li><strong>λ</strong>: ortalama varış hızı (süreç/saniye)</li>
+              <li><strong>W</strong>: ortalama bekleme süresi</li>
+              <li>Herhangi bir zamanlama algoritması için geçerli. Kararlı durum (steady state) gerektirir.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 6 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz6">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">SJF algoritması neden optimaldir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">Verilen süreç kümesi için minimum ortalama bekleme süresini garantiler. Ama pratikte burst süre bilinmez; üstel ortalama ile tahmin edilir.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="ch5.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Önceki Chapter</div>
+            <div class="title">Süreç Senkronizasyonu</div>
+          </div>
+        </a>
+        <a href="../index.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Geri dön</div>
+            <div class="title">Ana Sayfa</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 6: CPU Zamanlama</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const questions = [
+    { q: 'SJF algoritması neden optimaldir?', a: 'Verilen süreç kümesi için minimum ortalama bekleme süresini garantiler. Ama pratikte burst süre bilinmez; üstel ortalama ile tahmin edilir.' },
+    { q: 'Round Robin\'de time quantum seçimi neden önemlidir?', a: 'q büyükse → FCFS gibi. q küçükse → context switch overhead aşırı artar. Kural: burst\'lerin %80\'i q\'dan kısa; tipik 10-100ms.' },
+    { q: 'Starvation nedir ve nasıl önlenir?', a: 'Düşük öncelikli süreçlerin hiç CPU alamaması. Aging ile önlenir: bekleme süresi arttıkça öncelik artar.' },
+    { q: 'FCFS\'in Convoy Effect nedir?', a: 'Uzun burst\'lü süreç öne geçtiğinde kısa süreçlerin çok uzun beklediği durum. Hem CPU hem I/O kullanımını düşürür.' },
+    { q: 'Little\'s Law formülünü açıklayın.', a: 'n = λ × W. n: ortalama kuyruk uzunluğu, λ: ortalama varış hızı (süreç/sn), W: ortalama bekleme süresi. Herhangi bir zamanlama algoritması için geçerli.' },
+  ];
+  initQuiz('quiz6', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>

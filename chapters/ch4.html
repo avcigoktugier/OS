@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4 — Thread'ler | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html" class="active"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 4</span>
+    </nav>
+    <h1>🧵 Chapter 4: Thread'ler</h1>
+    <p class="ch-intro">Thread kavramı, faydaları, çok çekirdekli programlama, thread modelleri, kütüphaneleri ve thread sorunlarını kapsamlı incele.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#concept">Thread Kavramı</a></li>
+          <li><a href="#benefits">4 Fayda</a></li>
+          <li><a href="#multicore">Çok Çekirdekli</a></li>
+          <li><a href="#models">Thread Modelleri</a></li>
+          <li><a href="#libraries">Kütüphaneler</a></li>
+          <li><a href="#issues">Thread Sorunları</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- Thread Concept -->
+      <section class="section" id="concept">
+        <div class="section-label">Temel Tanım</div>
+        <h2>Thread Kavramı</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">🧵</div>
+          <div class="callout-body">
+            <h4>Thread Nedir?</h4>
+            <p><strong>Thread</strong>, CPU kullanımının temel birimidir. Bir süreç içinde birden fazla thread paralel çalışabilir; thread'ler sürecin kaynaklarını paylaşır.</p>
+          </div>
+        </div>
+
+        <h3>Paylaşılan vs Thread'e Özel</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Süreçle Paylaşılan</th>
+              <th>Thread'e Özel</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Code section (text)</td><td>Thread ID</td></tr>
+            <tr><td>Data section (global)</td><td>Program Counter</td></tr>
+            <tr><td>OS kaynakları (dosyalar, I/O)</td><td>Register seti</td></tr>
+            <tr><td>Heap (dinamik bellek)</td><td>Stack</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram-box" style="margin-top:1.5rem">
+          <div class="diagram-title">Tek Thread vs Çok Thread Süreç</div>
+          <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;align-items:flex-start">
+            <div style="text-align:center">
+              <div style="font-weight:700;margin-bottom:0.5rem;color:var(--muted)">Tek Thread</div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;width:140px">
+                <div style="background:var(--accent);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Code</div>
+                <div style="background:var(--green);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Data</div>
+                <div style="background:var(--orange);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Files</div>
+                <div style="background:var(--purple);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem">Thread</div>
+              </div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-weight:700;margin-bottom:0.5rem;color:var(--accent)">Çok Thread</div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;width:180px">
+                <div style="background:var(--accent);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Code</div>
+                <div style="background:var(--green);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Data</div>
+                <div style="background:var(--orange);color:white;border-radius:var(--r-md);padding:0.4rem;font-size:0.75rem;margin-bottom:0.4rem">Files</div>
+                <div style="display:flex;gap:0.3rem;margin-top:0.3rem">
+                  <div style="background:var(--purple);color:white;border-radius:var(--r-sm);padding:0.3rem;font-size:0.65rem;flex:1">T1</div>
+                  <div style="background:var(--purple);color:white;border-radius:var(--r-sm);padding:0.3rem;font-size:0.65rem;flex:1">T2</div>
+                  <div style="background:var(--purple);color:white;border-radius:var(--r-sm);padding:0.3rem;font-size:0.65rem;flex:1">T3</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Benefits -->
+      <section class="section" id="benefits">
+        <div class="section-label">4R Faydası</div>
+        <h2>Thread'lerin 4 Temel Faydası</h2>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-icon">⚡</div>
+            <h4>Responsiveness (Yanıt Verme)</h4>
+            <p>Sürecin bir thread'i bloklanmış olsa bile diğer thread'ler çalışmaya devam eder. Kullanıcı arayüzü (UI) thread'leri için kritik.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">🤝</div>
+            <h4>Resource Sharing (Kaynak Paylaşımı)</h4>
+            <p>Thread'ler sürecin kod, veri ve dosyalarını paylaşır. Shared memory veya IPC mekanizmasından çok daha kolay ve hızlı.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">💰</div>
+            <h4>Economy (Ekonomi)</h4>
+            <p>Thread oluşturmak, süreç oluşturmaktan çok daha ucuzdur (bellek/zaman). Context switch overhead'i de daha azdır.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">📈</div>
+            <h4>Scalability (Ölçeklenebilirlik)</h4>
+            <p>Çok çekirdekli (multicore) mimaride thread'ler gerçek anlamda paralel çalışabilir; tek çekirdekte mümkün olmayan performans elde edilir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Multicore Programming -->
+      <section class="section" id="multicore">
+        <div class="section-label">Parallelism</div>
+        <h2>Çok Çekirdekli Programlama</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Parallelism (Paralellik)</div>
+            <div class="def-desc">Fiziksel olarak aynı anda birden fazla iş yapılır. <strong>Çok çekirdekli donanım</strong> gerektirir. Örnek: 4 çekirdekte 4 thread eş zamanlı çalışır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Concurrency (Eşzamanlılık)</div>
+            <div class="def-desc">Birden fazla iş ilerleme kaydeder, ancak aynı anda olmayabilir. Tek çekirdekte context switch ile sağlanır. Parallelism gerektirmez.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Data Parallelism</div>
+            <div class="def-desc">Aynı veri kümesinin farklı alt kümeleri, farklı çekirdeklerde aynı işlem uygulanır. Örnek: büyük dizinin yarısı çekirdek 1'de, diğer yarısı çekirdek 2'de.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Task Parallelism</div>
+            <div class="def-desc">Farklı thread'ler farklı işlemleri aynı veya farklı veri üzerinde yapar. Her thread farklı bir görevi gerçekleştirir.</div>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">📐</div>
+          <div class="callout-body">
+            <h4>Amdahl Yasası</h4>
+            <p style="font-size:1.05rem;font-weight:700;margin-bottom:0.5rem">Speedup ≤ 1 / (S + (1−S)/N)</p>
+            <ul>
+              <li><strong>S</strong> = seri (paralelize edilemeyen) kısım oranı</li>
+              <li><strong>N</strong> = çekirdek sayısı</li>
+              <li>Uygulama %75 paralel, %25 seri → 2 çekirdekte speedup = <strong>1.6x</strong></li>
+              <li>N → ∞ iken speedup → 1/S (üst sınır)</li>
+              <li><strong>Öğretisi:</strong> Seri kısım ne kadar büyükse çok çekirdekten o kadar az faydalanılır.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Thread Models -->
+      <section class="section" id="models">
+        <div class="section-label">Modeller</div>
+        <h2>Thread Modelleri (User ↔ Kernel)</h2>
+
+        <div class="algo-grid">
+          <div class="algo-card">
+            <div class="algo-header">Many-to-One</div>
+            <div class="algo-body">
+              <p>Birden fazla user-level thread → tek kernel thread. Kullanıcı kütüphanesi yönetir; kernel farkında değil.</p>
+              <p><em>Örnek: Solaris Green Threads, GNU Portable Threads</em></p>
+              <div style="display:flex;gap:0.5rem;margin:0.75rem 0;justify-content:center">
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.3rem 0.5rem;font-size:0.7rem">U1</div>
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.3rem 0.5rem;font-size:0.7rem">U2</div>
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.3rem 0.5rem;font-size:0.7rem">U3</div>
+              </div>
+              <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼ tümü</div>
+              <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.3rem;text-align:center;font-size:0.75rem;margin-top:0.3rem">K1</div>
+              <div class="algo-pros-cons">
+                <span class="pro">+ Basit yönetim</span>
+                <span class="con">− Bir bloklanırsa hepsi durur</span>
+              </div>
+            </div>
+          </div>
+          <div class="algo-card">
+            <div class="algo-header">One-to-One</div>
+            <div class="algo-body">
+              <p>Her user-level thread → bir kernel thread. Gerçek paralellik sağlar; çok çekirdekte iyi çalışır.</p>
+              <p><em>Örnek: Windows, Linux</em></p>
+              <div style="display:flex;gap:0.5rem;margin:0.75rem 0;justify-content:center">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
+                  <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">U1</div>
+                  <div style="color:var(--muted);font-size:0.65rem">↓</div>
+                  <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">K1</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
+                  <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">U2</div>
+                  <div style="color:var(--muted);font-size:0.65rem">↓</div>
+                  <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">K2</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
+                  <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">U3</div>
+                  <div style="color:var(--muted);font-size:0.65rem">↓</div>
+                  <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.25rem 0.4rem;font-size:0.7rem">K3</div>
+                </div>
+              </div>
+              <div class="algo-pros-cons">
+                <span class="pro">+ Gerçek parallelism</span>
+                <span class="con">− Thread sayısı kısıtlı</span>
+              </div>
+            </div>
+          </div>
+          <div class="algo-card">
+            <div class="algo-header">Many-to-Many</div>
+            <div class="algo-body">
+              <p>N user-level thread → M ≤ N kernel thread. OS yeterli sayıda kernel thread oluşturur; en esnek model.</p>
+              <p><em>Örnek: Solaris, Windows ThreadFiber</em></p>
+              <div style="display:flex;gap:0.3rem;margin:0.5rem 0;justify-content:center">
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem;font-size:0.65rem">U1</div>
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem;font-size:0.65rem">U2</div>
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem;font-size:0.65rem">U3</div>
+                <div style="background:var(--accent-hl);border:1px solid var(--accent);border-radius:var(--r-sm);padding:0.25rem;font-size:0.65rem">U4</div>
+              </div>
+              <div style="text-align:center;color:var(--muted);font-size:0.65rem">⬘⬗ çoktan çoğa</div>
+              <div style="display:flex;gap:0.4rem;margin:0.3rem 0;justify-content:center">
+                <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.25rem 0.5rem;font-size:0.65rem">K1</div>
+                <div style="background:var(--green);color:white;border-radius:var(--r-sm);padding:0.25rem 0.5rem;font-size:0.65rem">K2</div>
+              </div>
+              <div class="algo-pros-cons">
+                <span class="pro">+ Optimal esneklik</span>
+                <span class="con">− Karmaşık implementasyon</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Thread Libraries -->
+      <section class="section" id="libraries">
+        <div class="section-label">Kütüphaneler</div>
+        <h2>Thread Kütüphaneleri ve Implicit Threading</h2>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Kütüphane</th>
+              <th>Platform</th>
+              <th>Temel Fonksiyonlar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">POSIX Pthreads</td><td>UNIX / Linux / macOS</td><td><code>pthread_create()</code>, <code>pthread_join()</code>, <code>pthread_exit()</code></td></tr>
+            <tr><td class="hl">Windows Threads</td><td>Windows API</td><td><code>CreateThread()</code>, <code>WaitForSingleObject()</code>, <code>TerminateThread()</code></td></tr>
+            <tr><td class="hl">Java Threads</td><td>JVM (tüm platformlar)</td><td><code>Thread</code> extend veya <code>Runnable</code> implement; <code>start()</code>, <code>join()</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top:1.5rem">Implicit Threading</h3>
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Thread Pools</div>
+            <div class="def-desc">Başlangıçta belirli sayıda thread oluşturulur ve hazır bekletilir. İstek geldiğinde hazır thread alır → yeni oluşturmaktan hızlı. Thread sayısını sınırlar (sistem koruması). <em>Java ThreadPoolExecutor, .NET ThreadPool</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">OpenMP</div>
+            <div class="def-desc">C/C++/Fortran için derleyici direktifleri. <code>#pragma omp parallel</code> ile paylaşımlı bellek paralelizmi. Döngüler otomatik paralel bölünür.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">GCD — Grand Central Dispatch</div>
+            <div class="def-desc">Apple (macOS/iOS). <code>^{ }</code> blok söz dizimi. Dispatch queue'lara (serial/concurrent) görevler gönderilir; sistem kaç thread kullanacağına karar verir.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Thread Issues -->
+      <section class="section" id="issues">
+        <div class="section-label">Sorunlar</div>
+        <h2>Thread Sorunları</h2>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Sorun</th>
+              <th>Açıklama</th>
+              <th>Çözüm / Not</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="hl">fork() / exec()</td>
+              <td>fork() tüm thread'leri kopyalar mı?</td>
+              <td>İki sürüm: yalnız çağıran thread veya tüm thread'ler. exec() normalde tüm thread'leri değiştirir.</td>
+            </tr>
+            <tr>
+              <td class="hl">Signal Handling</td>
+              <td>UNIX sinyali hangi thread'e gönderilir?</td>
+              <td>Thread'e özel (SIGSEGV) veya tüm thread'lere. Uygulamada karmaşık; <code>pthread_kill()</code> ile yönlendirme.</td>
+            </tr>
+            <tr>
+              <td class="hl">Thread Cancellation</td>
+              <td>Çalışan thread'i durdurmak</td>
+              <td><strong>Async:</strong> anında durdurur, kaynak riski. <strong>Deferred:</strong> cancellation point'te kontrollü bitiş.</td>
+            </tr>
+            <tr>
+              <td class="hl">Thread-Local Storage (TLS)</td>
+              <td>Her thread'in kendi "global" verisi</td>
+              <td><code>__thread</code> (C), <code>ThreadLocal</code> (Java). Static değişken gibi ama thread'e özeldir.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 4 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz4">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">Thread ile process arasındaki temel fark nedir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">Process kendi adres alanına sahiptir. Thread'ler aynı süreç içinde kod, veri ve OS kaynaklarını paylaşır. Thread oluşturmak daha ucuzdur (lightweight).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="ch3.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Önceki Chapter</div>
+            <div class="title">Süreçler</div>
+          </div>
+        </a>
+        <a href="ch5.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Sonraki Chapter</div>
+            <div class="title">Süreç Senkronizasyonu</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 4: Thread'ler</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const questions = [
+    { q: 'Thread ile process arasındaki temel fark nedir?', a: 'Process kendi adres alanına sahiptir. Thread\'ler aynı süreç içinde kod, veri ve OS kaynaklarını paylaşır. Thread oluşturmak daha ucuzdur (lightweight).' },
+    { q: 'Parallelism ile Concurrency arasındaki fark nedir?', a: 'Parallelism: aynı anda gerçekten birden fazla iş (çok çekirdek). Concurrency: birden fazla iş ilerleme kaydeder ama aynı anda olmayabilir (tek çekirdek + context switch).' },
+    { q: 'Amdahl Yasası ne söyler?', a: 'Speedup ≤ 1/(S+(1-S)/N). S=seri kısım, N=çekirdek. Seri kısım ne kadar büyükse çok çekirdekten o kadar az faydalanılır.' },
+    { q: 'One-to-One modelin avantajı ve dezavantajı nedir?', a: 'Avantaj: gerçek parallelism; bir thread bloklanınca diğerleri devam eder. Dezavantaj: her user thread için kernel thread overhead\'i; thread sayısı kısıtlı.' },
+    { q: 'Thread pool neden doğrudan thread oluşturmaktan iyidir?', a: 'Hazır thread kullanmak yeni oluşturmaktan hızlıdır. Thread sayısını sınırlar. Task oluşturma mekaniklerinden ayrılır.' },
+  ];
+  initQuiz('quiz4', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>

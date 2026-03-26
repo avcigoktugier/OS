@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2 — OS Yapıları | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html" class="active"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 2</span>
+    </nav>
+    <h1>🏗️ Chapter 2: OS Yapıları</h1>
+    <p class="ch-intro">İşletim sistemi hizmetlerini, kullanıcı arayüzlerini, system call mekanizmalarını ve farklı OS mimarisi modellerini incele.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#services">OS Hizmetleri</a></li>
+          <li><a href="#ui">Kullanıcı Arayüzleri</a></li>
+          <li><a href="#syscall">System Calls</a></li>
+          <li><a href="#structure">OS Yapı Modelleri</a></li>
+          <li><a href="#boot">Boot Süreci</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- OS Services -->
+      <section class="section" id="services">
+        <div class="section-label">Hizmetler</div>
+        <h2>OS Hizmetleri</h2>
+        <p>İşletim sistemi iki ana gruba ayrılan hizmetler sunar:</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term" style="color:var(--accent)">Kullanıcıya Yönelik Hizmetler</div>
+            <div class="def-desc">
+              <ul>
+                <li><strong>Kullanıcı Arayüzü (UI):</strong> CLI, GUI ve dokunmatik arayüz seçenekleri.</li>
+                <li><strong>Program Yürütme:</strong> Programı belleğe yükler, çalıştırır ve normal/anormal bitişi yönetir.</li>
+                <li><strong>I/O Operasyonları:</strong> Çalışan program dosya veya cihaz üzerinde I/O gerektirebilir; OS bunu güvenli yönetir.</li>
+                <li><strong>Dosya Yönetimi:</strong> Okuma, yazma, oluşturma, silme, arama, listeleme ve izin yönetimi.</li>
+                <li><strong>İletişim:</strong> Süreçler arası aynı/farklı bilgisayarda mesaj iletimi — shared memory veya message passing ile.</li>
+                <li><strong>Hata Tespiti:</strong> CPU, bellek, I/O veya kullanıcı programlarındaki hataları tespit edip düzeltici aksiyon alır.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="def-item">
+            <div class="def-term" style="color:var(--green)">Sistem Verimliliği Hizmetleri</div>
+            <div class="def-desc">
+              <ul>
+                <li><strong>Kaynak Tahsisi:</strong> CPU döngüsü, bellek, dosya depolama ve I/O aygıtlarını süreçler arasında yönetir.</li>
+                <li><strong>Accounting (Muhasebe):</strong> Kullanıcıların kaynaklarını ne kadar ve ne tür kullandığını izler.</li>
+                <li><strong>Koruma ve Güvenlik:</strong> Bilgilere erişimi denetler; sistem kaynaklarına yetkisiz erişimi engeller.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- User Interfaces -->
+      <section class="section" id="ui">
+        <div class="section-label">Arayüz</div>
+        <h2>Kullanıcı Arayüzleri</h2>
+
+        <div class="tab-container">
+          <div class="tab-list" role="tablist">
+            <button class="tab-btn active" role="tab" data-tab="cli">CLI</button>
+            <button class="tab-btn" role="tab" data-tab="gui">GUI</button>
+            <button class="tab-btn" role="tab" data-tab="touch">Touchscreen</button>
+          </div>
+
+          <div class="tab-panel active" data-panel="cli">
+            <h4>Command-Line Interface (CLI)</h4>
+            <p>Kullanıcı komutları doğrudan metin olarak girer. <strong>Command interpreter</strong> (kabuk/shell) bu komutları alıp çalıştırır.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">Shell Türleri</div>
+                <div class="def-desc">bash, sh, csh, ksh, zsh gibi UNIX/Linux kabukları. Windows'ta cmd.exe ve PowerShell.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Kernel vs Sistem Programı</div>
+                <div class="def-desc">Bazı komutlar (cd, exit) shell'in içindedir. Diğerleri (ls, cp) ayrı sistem programlarıdır — shell onları çağırır.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Esneklik</div>
+                <div class="def-desc">Betik (script) yazımı, pipe, yönlendirme ve otomasyon için güçlü araçtır. Sunucu yönetiminde vazgeçilmez.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="gui">
+            <h4>Graphical User Interface (GUI)</h4>
+            <p>Masaüstü metaforu: simgeler, pencereler, menüler ve fare ile etkileşim. İlk olarak <strong>Xerox PARC</strong>'da icat edildi; Apple Lisa ve Mac ile yaygınlaştı.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">Windows</div>
+                <div class="def-desc">Microsoft Windows — başlat menüsü, görev çubuğu. GUI her yerden erişilebilir.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Mac OS X Aqua</div>
+                <div class="def-desc">Apple'ın Aqua arayüzü — Dock, Finder; Mach kernel ve BSD UNIX üzerine inşa.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Linux Desktop</div>
+                <div class="def-desc">GNOME, KDE gibi ortamlar; CLI ve GUI bir arada kullanılabilir.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="touch">
+            <h4>Touchscreen Arayüzü</h4>
+            <p>Mobil cihazlar için klavye+fare yerine dokunmatik etkileşim. iOS ve Android bu modeli benimsemiştir.</p>
+            <div class="def-list">
+              <div class="def-item">
+                <div class="def-term">Gesture (Hareket)</div>
+                <div class="def-desc">Kaydırma, sıkıştırma, çift tıklama, döndürme gibi dokunmatik hareketler.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Sanal Klavye</div>
+                <div class="def-desc">Fiziksel klavye olmaksızın ekran üzerinde metin girişi sağlar.</div>
+              </div>
+              <div class="def-item">
+                <div class="def-term">Ses Komutları</div>
+                <div class="def-desc">Siri, Google Assistant gibi yapay zeka destekli sesli etkileşim.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Calls -->
+      <section class="section" id="syscall">
+        <div class="section-label">API</div>
+        <h2>System Calls</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>System Call Nedir?</h4>
+            <p>System call, OS tarafından sağlanan hizmetlere programlama arayüzüdür. Genellikle C/C++ ile yazılır. Programlar doğrudan system call yerine yüksek seviyeli <strong>API</strong>'leri kullanır.</p>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Win32 API</div>
+            <div class="def-desc">Windows uygulamaları için standart API. <code>CreateProcess()</code>, <code>ReadFile()</code>, <code>WriteFile()</code> gibi fonksiyonlar system call'ları saralar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">POSIX API</div>
+            <div class="def-desc">UNIX, Linux ve Mac OS X için taşınabilir standart. <code>fork()</code>, <code>open()</code>, <code>read()</code>, <code>write()</code>, <code>exit()</code> içerir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Java API (JVM)</div>
+            <div class="def-desc">Java Virtual Machine üzerinden işletim sistemi bağımsız çalışır; JVM altında native system call'lara çevrilir.</div>
+          </div>
+        </div>
+
+        <h3>System Call Türleri</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Kategori</th>
+              <th>Örnekler</th>
+              <th>Açıklama</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">Process Control</td><td><code>fork()</code>, <code>exec()</code>, <code>exit()</code>, <code>wait()</code>, <code>kill()</code></td><td>Süreç oluşturma, çalıştırma, sonlandırma</td></tr>
+            <tr><td class="hl">File Management</td><td><code>open()</code>, <code>close()</code>, <code>read()</code>, <code>write()</code>, <code>delete()</code></td><td>Dosya işlemleri</td></tr>
+            <tr><td class="hl">Device Management</td><td>request/release device, read/write</td><td>Cihaz talep ve kullanımı</td></tr>
+            <tr><td class="hl">Information Maintenance</td><td><code>getpid()</code>, <code>time()</code>, sistem verisi</td><td>Süreç ve sistem bilgisi</td></tr>
+            <tr><td class="hl">Communications</td><td><code>pipe()</code>, <code>shmget()</code>, <code>send()</code>, <code>receive()</code></td><td>Süreçler arası iletişim</td></tr>
+            <tr><td class="hl">Protection</td><td><code>chmod()</code>, <code>umask()</code>, <code>setuid()</code></td><td>Erişim denetimi ve güvenlik</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- OS Architecture Models -->
+      <section class="section" id="structure">
+        <div class="section-label">Mimari</div>
+        <h2>OS Yapı Modelleri</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">1. Basit / Monolithic (MS-DOS)</div>
+            <div class="def-desc">Modüler değil; OS ve uygulama arasında zayıf ayrım. En az alan için en fazla işlevsellik. Güvenlik açısından tehlikeli — kötü program sistemi çökertebilir. <em>Örnek: MS-DOS, eski Unix</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">2. Katmanlı Yapı (Layered)</div>
+            <div class="def-desc">OS katmanlara bölünür; her katman yalnızca bir alt katmanı kullanır. Hata ayıklama kolaylaşır; katmandan katmana geçişte performans maliyeti oluşur. <em>THE OS, Venus</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">3. Microkernel (Mach)</div>
+            <div class="def-desc">Kernel minimum tutulur; dosya sistemi, aygıt sürücüleri vb. user space'e taşınır. Güvenli ve taşınabilir; ancak user space–kernel space arası IPC mesajlaşması performans yükü oluşturur. <em>Mach, QNX, MINIX</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">4. Modüller / LKM</div>
+            <div class="def-desc">Çalışma zamanında yüklenebilir/kaldırılabilir kernel modülleri (Loadable Kernel Modules). Monolithic kernel'in esnekliği ve microkernel'in modülerliğini birleştirir. <em>Linux, Solaris</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">5. Hibrit (Hybrid)</div>
+            <div class="def-desc">Birden fazla yaklaşımı birleştirir:
+              <ul style="margin-top:0.5rem">
+                <li><strong>Linux:</strong> Monolithic + LKM modülleri</li>
+                <li><strong>Windows:</strong> Monolithic + microkernel unsurları</li>
+                <li><strong>Mac OS X:</strong> Mach microkernel + BSD UNIX katmanı</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-body">
+            <h4>Policy vs Mechanism Ayrımı</h4>
+            <ul>
+              <li><strong>Policy (Politika — Ne yapılacak?):</strong> CPU'nun hangi sürece ne zaman verileceği kararı.</li>
+              <li><strong>Mechanism (Mekanizma — Nasıl yapılacak?):</strong> CPU'yu süreçler arasında geçirme tekniği (timer, context switch).</li>
+              <li>Ayrım esneklik sağlar: politika değişse bile mekanizma değişmez. Maksimum uyarlanabilirlik.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Boot Process -->
+      <section class="section" id="boot">
+        <div class="section-label">Başlatma</div>
+        <h2>Boot Süreci</h2>
+        <p>Bilgisayara güç verildiğinde OS yüklenmeden önce gerçekleşen adım adım süreç:</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">1. Power-On (Güç Açılışı)</div>
+            <div class="def-desc">CPU, sabit bir bellek konumunda (reset vector) çalışmaya başlar. Donanım bileşenleri sıfırlanır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">2. Firmware / ROM (BIOS / UEFI)</div>
+            <div class="def-desc">ROM'daki firmware çalışır; POST (Power-On Self Test) ile donanım kontrolü yapar. Boot aygıtını belirler.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">3. Bootstrap Loader (GRUB)</div>
+            <div class="def-desc">Diske gider, OS kernel'ini bulur ve belleğe yükler. GRUB (Grand Unified Bootloader) birden fazla işletim sistemi seçimi sunar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">4. Kernel Başlatma</div>
+            <div class="def-desc">Kernel kontrolü alır; donanım tespiti, driver yükleme, bellek yönetimi başlatma. Sistem kaynaklarını hazırlar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">5. Init / Systemd</div>
+            <div class="def-desc">İlk kullanıcı süreci (PID 1) başlar. Tüm sistem servisleri ve daemon'lar bu süreçten türetilir. Kullanıcı oturumu hazırlanır.</div>
+          </div>
+        </div>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Boot Akışı</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;max-width:520px;margin:0 auto">
+            <div style="background:var(--red);color:white;border-radius:var(--r-lg);padding:0.8rem 1.2rem;text-align:center;font-weight:700">🔌 Power-On → CPU Reset</div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼</div>
+            <div style="background:var(--orange);color:white;border-radius:var(--r-lg);padding:0.8rem 1.2rem;text-align:center;font-weight:700">💾 BIOS/UEFI Firmware → POST</div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼</div>
+            <div style="background:var(--accent);color:white;border-radius:var(--r-lg);padding:0.8rem 1.2rem;text-align:center;font-weight:700">🔍 Bootstrap Loader (GRUB) → Kernel bulur</div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼</div>
+            <div style="background:var(--green);color:white;border-radius:var(--r-lg);padding:0.8rem 1.2rem;text-align:center;font-weight:700">⚙️ Kernel Başlatma → Donanım, Driver</div>
+            <div style="text-align:center;color:var(--muted);font-size:0.75rem">▼</div>
+            <div style="background:var(--purple);color:white;border-radius:var(--r-lg);padding:0.8rem 1.2rem;text-align:center;font-weight:700">👤 systemd/init → Kullanıcı Servisleri</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 2 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz2">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">System call nedir ve API ile farkı nedir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">System call, OS hizmetlerine programlama arayüzüdür. API (Win32, POSIX, Java), system call'ların üstündeki yüksek seviyeli sarmalayıcıdır; programlar API'yi kullanır, doğrudan system call'ı genellikle kullanmaz.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="ch1.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Önceki Chapter</div>
+            <div class="title">Giriş</div>
+          </div>
+        </a>
+        <a href="ch3.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Sonraki Chapter</div>
+            <div class="title">Süreçler</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 2: OS Yapıları</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const questions = [
+    { q: 'System call nedir ve API ile farkı nedir?', a: 'System call, OS hizmetlerine programlama arayüzüdür. API (Win32, POSIX, Java), system call\'ların üstündeki yüksek seviyeli sarmalayıcıdır; programlar API\'yi kullanır, doğrudan system call\'ı genellikle kullanmaz.' },
+    { q: 'Microkernel mimarisinin avantaj ve dezavantajı nedir?', a: 'Avantaj: Daha güvenli (kernel\'da az kod), kolay genişletme/taşıma. Dezavantaj: User space - kernel space arası IPC mesajlaşması performans yükü oluşturur.' },
+    { q: 'Policy/Mechanism ayrımı neden önemlidir?', a: 'Mekanizma HOW (nasıl), Politika WHAT (ne) yapar. Ayrım sayesinde politika değişse bile mekanizma değişmez - maksimum esneklik.' },
+    { q: 'FreeBSD\'de bir program nasıl çalıştırılır?', a: 'Shell → fork() ile yeni süreç oluşturur → exec() ile programı yükler → çalışır → exit code ile biter (0=başarı, >0=hata).' },
+    { q: 'Daemon nedir?', a: 'Arka planda çalışan sistem servisleri; boot\'ta başlar, sürekli çalışır. Örnek: disk kontrolü, process scheduling, error logging.' },
+  ];
+  initQuiz('quiz2', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>

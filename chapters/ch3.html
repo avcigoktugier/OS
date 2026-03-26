@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3 — Süreçler | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html" class="active"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 3</span>
+    </nav>
+    <h1>⚙️ Chapter 3: Süreçler</h1>
+    <p class="ch-intro">Süreç kavramı, bellek yapısı, yaşam döngüsü, PCB, zamanlama ve süreçler arası iletişimi (IPC) kapsamlı öğren.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#concept">Süreç Kavramı</a></li>
+          <li><a href="#memory">Bellek Yapısı</a></li>
+          <li><a href="#states">Süreç Durumları</a></li>
+          <li><a href="#pcb">PCB</a></li>
+          <li><a href="#scheduling">Scheduling</a></li>
+          <li><a href="#operations">Süreç Operasyonları</a></li>
+          <li><a href="#ipc">IPC</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- Process Concept -->
+      <section class="section" id="concept">
+        <div class="section-label">Temel Tanım</div>
+        <h2>Süreç Kavramı</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>Süreç Nedir?</h4>
+            <p><strong>Süreç (process)</strong>, yürütme halindeki bir programdır. Program pasif (disk'te), süreç aktiftir (bellekte çalışır).</p>
+          </div>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-icon">📄</div>
+            <h4>Program vs Süreç</h4>
+            <p>Program disk'teki pasif varlıktır (binary dosya). Süreç bellekteki aktif varlıktır. Aynı programdan birden fazla süreç çalışabilir (çoklu kullanıcı).</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">🔢</div>
+            <h4>Sequential Çalışma</h4>
+            <p>Bir adım tamamlanmadan bir sonraki başlamaz. CPU komutları sırayla işler; ancak çoklu süreçle paralel görünüm sağlanır.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">⏱️</div>
+            <h4>Batch vs Interactive</h4>
+            <p>Batch sistemlerinde "job" kavramı kullanılır. Timesharing (etkileşimli) sistemlerde ise "task" veya "user process" denir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Memory Layout -->
+      <section class="section" id="memory">
+        <div class="section-label">Bellek</div>
+        <h2>Sürecin Bellek Yapısı</h2>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Süreç Bellek Düzeni (Yüksek Adres → Düşük Adres)</div>
+          <div style="display:flex;flex-direction:column;gap:0.35rem;max-width:480px;margin:0 auto">
+            <div style="background:var(--orange);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;text-align:center;font-weight:700">
+              📦 Stack (büyür ↓)<br><span style="font-size:0.75rem;opacity:0.85">Fonksiyon param., dönüş addr., yerel değişken</span>
+            </div>
+            <div style="text-align:center;padding:0.4rem;color:var(--muted);font-style:italic;font-size:0.8rem">↕ Kullanılmayan (gap)</div>
+            <div style="background:var(--green);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;text-align:center;font-weight:700">
+              🔼 Heap (büyür ↑)<br><span style="font-size:0.75rem;opacity:0.85">Dinamik bellek: malloc() / new</span>
+            </div>
+            <div style="background:var(--accent);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;text-align:center;font-weight:700">
+              📊 Data Section<br><span style="font-size:0.75rem;opacity:0.85">Global değişkenler (initialized &amp; uninitialized)</span>
+            </div>
+            <div style="background:var(--red);color:white;border-radius:var(--r-md);padding:0.75rem 1.2rem;text-align:center;font-weight:700">
+              📝 Text (Code) — Sabit<br><span style="font-size:0.75rem;opacity:0.85">Program kodu; değişmez</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Text Section</div>
+            <div class="def-desc">Program kodu (makine komutları). Sabit boyutlu, salt okunur.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Data Section</div>
+            <div class="def-desc">Global ve statik değişkenler. Initialized (BSS) ve uninitialized olmak üzere ikiye ayrılır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Heap</div>
+            <div class="def-desc">Çalışma zamanında dinamik ayrılan bellek. <code>malloc()</code> / <code>new</code> ile büyür, <code>free()</code> / <code>delete</code> ile küçülür.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Stack</div>
+            <div class="def-desc">Geçici veri: fonksiyon parametreleri, dönüş adresleri, yerel değişkenler. Fonksiyon çağrıldığında büyür, döndüğünde küçülür.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Program Counter (PC)</div>
+            <div class="def-desc">Sonraki çalışacak komutun bellek adresi. Her komut sonrası güncellenir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">CPU Registers</div>
+            <div class="def-desc">Sürecin anlık CPU durumu — genel amaçlı register'lar, bayraklar. Context switch sırasında PCB'ye kaydedilir.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Process States -->
+      <section class="section" id="states">
+        <div class="section-label">Yaşam Döngüsü</div>
+        <h2>Süreç Durumları</h2>
+        <p>Bir süreç yaşamı boyunca 5 farklı durumdan geçer. Duruma tıkla:</p>
+
+        <div id="process-state-machine">
+          <div class="state-machine">
+            <div class="state-node" data-state="new">New</div>
+            <div class="state-node" data-state="ready">Ready</div>
+            <div class="state-node" data-state="running">Running</div>
+            <div class="state-node" data-state="waiting">Waiting</div>
+            <div class="state-node" data-state="terminated">Terminated</div>
+          </div>
+          <div class="state-info">Bir duruma tıkla → açıklama görün</div>
+        </div>
+
+        <h3 style="margin-top:2rem">Durum Geçişleri</h3>
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">New → Ready</div>
+            <div class="def-desc"><strong>admitted</strong> — OS süreci kabul eder, ready queue'ya alır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Ready → Running</div>
+            <div class="def-desc"><strong>dispatch</strong> — CPU scheduler (kısa-dönem) süreci seçer ve CPU'ya atar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Running → Waiting</div>
+            <div class="def-desc"><strong>I/O isteği veya olay bekleme</strong> — süreç kendisi bekler; CPU'dan gönüllü ayrılır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Running → Ready</div>
+            <div class="def-desc"><strong>interrupt / preempt</strong> — time slice doldu veya yüksek öncelikli süreç hazır; OS CPU'yu geri alır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Waiting → Ready</div>
+            <div class="def-desc"><strong>I/O tamamlandı / olay gerçekleşti</strong> — süreç tekrar çalışmaya hazır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Running → Terminated</div>
+            <div class="def-desc"><strong>exit() / hata</strong> — süreç tamamlandı veya hata ile sonlandırıldı.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PCB -->
+      <section class="section" id="pcb">
+        <div class="section-label">Veri Yapısı</div>
+        <h2>Process Control Block (PCB)</h2>
+
+        <div class="callout info">
+          <div class="callout-icon">📋</div>
+          <div class="callout-body">
+            <h4>PCB Nedir?</h4>
+            <p>Her süreçle ilişkili bilgileri tutan veri yapısı. <strong>Task Control Block</strong> da denir. OS, süreci yönetmek için PCB'yi kullanır.</p>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Process State</div>
+            <div class="def-desc">new, ready, running, waiting, terminated — sürecin mevcut durumu.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Program Counter</div>
+            <div class="def-desc">Süreç için çalışacak sonraki komutun adresi.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">CPU Registers</div>
+            <div class="def-desc">Tüm genel amaçlı register'lar, durum bayrakları (PC ile birlikte context switch'te kaydedilir).</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">CPU Scheduling Info</div>
+            <div class="def-desc">Öncelik, scheduling kuyruğu bağlantıları, zamanlama parametreleri.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Memory Management Info</div>
+            <div class="def-desc">Page table, segment table, bellek sınırları.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Accounting Info</div>
+            <div class="def-desc">CPU kullanım süresi, zaman sınırları, hesap numarası, job/process numarası.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">I/O Status Info</div>
+            <div class="def-desc">Sürece tahsis edilmiş I/O aygıtları, açık dosyaların listesi.</div>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-body">
+            <h4>Context Switch = Saf Overhead</h4>
+            <p>Mevcut sürecin PCB'ye kaydedilmesi + yeni sürecin PCB'den yüklenmesi sırasında hiçbir faydalı iş yapılmaz. Saf zaman kaybıdır; donanım desteği (birden fazla register seti) bu yükü azaltır.</p>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">🐧</div>
+          <div class="callout-body">
+            <h4>Linux: task_struct</h4>
+            <p>Linux'ta PCB'ye karşılık gelen yapı <code>task_struct</code>'tır. İçerdiği alanlar: <code>pid</code>, <code>state</code>, <code>parent</code>, <code>children</code>, <code>files</code>, <code>mm</code> (memory map).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scheduling -->
+      <section class="section" id="scheduling">
+        <div class="section-label">Zamanlama</div>
+        <h2>Süreç Zamanlama</h2>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Short-term Scheduler (CPU Scheduler)</div>
+            <div class="def-desc">Ready queue'dan süreci seçer ve CPU'ya atar. Milisaniye bazında çalışır — en sık çağrılan scheduler. <em>Hız kritik!</em></div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Long-term Scheduler (Job Scheduler)</div>
+            <div class="def-desc">Hangi süreçlerin ready queue'ya alınacağını seçer. Saniyeler hatta dakikalar bazında çalışır. <strong>Multiprogramlama derecesini</strong> (bellekteki süreç sayısı) kontrol eder.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Medium-term Scheduler (Swapper)</div>
+            <div class="def-desc">Süreci bellekten diske taşır (swap out) veya geri alır (swap in). Multiprogramlama derecesini dinamik azaltır/artırır.</div>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">📊</div>
+          <div class="callout-body">
+            <h4>I/O-bound vs CPU-bound</h4>
+            <ul>
+              <li><strong>I/O-bound:</strong> Daha fazla I/O bekler, kısa CPU burst'leri. Örnek: metin editörü.</li>
+              <li><strong>CPU-bound:</strong> Uzun CPU burst'leri, az I/O. Örnek: video encoder, bilimsel hesaplama.</li>
+              <li>Long-term scheduler: iyi bir karışım seçmeli — tamamen I/O veya CPU-bound olmaz.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Process Operations -->
+      <section class="section" id="operations">
+        <div class="section-label">fork / exec</div>
+        <h2>Süreç Operasyonları</h2>
+
+        <pre class="code-block"><code>pid_t pid = fork();      // Yeni süreç oluştur
+if (pid == 0) {
+    // Çocuk süreç (child)
+    execlp("/bin/ls", "ls", NULL);  // Çocukta ls çalıştır
+} else if (pid > 0) {
+    // Ebeveyn süreç (parent); pid = child'ın PID'i
+    wait(NULL);          // Child bitmesini bekle
+    printf("Child bitti.\n");
+} else {
+    // Hata: fork() başarısız, -1 döndü
+}</code></pre>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">fork()</div>
+            <div class="def-desc">Mevcut süreci kopyalar (adres alanı, dosyalar vb.). <strong>Parent'a child'ın PID'i (>0)</strong>, <strong>child'a 0</strong> döner. Hata durumunda -1.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">exec()</div>
+            <div class="def-desc">Mevcut sürecin adres alanını yeni programla değiştirir. <code>execl()</code>, <code>execlp()</code>, <code>execvp()</code> varyantları. fork() → exec() kalıbı yaygın.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">wait()</div>
+            <div class="def-desc">Parent süreci, child'ın bitmesini bekler. Child'ın exit status'unu toplar. Zombie önler.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">exit()</div>
+            <div class="def-desc">Süreci sonlandırır, kaynakları serbest bırakır. Son kodu (0=başarı, >0=hata) OS'a bildirir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Zombie Süreç</div>
+            <div class="def-desc">Child bitti ama parent henüz <code>wait()</code> yapmadı. PCB hâlâ var — exit status beklenirken. Çok sayıda zombie kaynak sızıntısına yol açar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Orphan Süreç</div>
+            <div class="def-desc">Parent bitti, child devam ediyor. <strong>init/systemd (PID 1)</strong> orphan'ları evlat edinir (adopt) ve bekler.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- IPC -->
+      <section class="section" id="ipc">
+        <div class="section-label">İletişim</div>
+        <h2>Süreçler Arası İletişim (IPC)</h2>
+
+        <div class="ipc-compare">
+          <div class="ipc-card" style="border-top:3px solid var(--accent)">
+            <h4 style="color:var(--accent)">📦 Shared Memory</h4>
+            <ul>
+              <li>Ortak bellek bölgesi paylaşılır</li>
+              <li>Kullanıcı süreci kontrolünde</li>
+              <li>Çok hızlı — OS müdahalesi az</li>
+              <li>Senkronizasyon <strong>programcıya</strong> bırakılır</li>
+              <li>Race condition riski yüksek</li>
+            </ul>
+          </div>
+          <div class="ipc-card" style="border-top:3px solid var(--green)">
+            <h4 style="color:var(--green)">✉️ Message Passing</h4>
+            <ul>
+              <li>OS aracılık eder</li>
+              <li><code>send()</code> / <code>receive()</code> ile haberleşme</li>
+              <li>Dağıtık sistemler için uygun</li>
+              <li>Daha yavaş (sistem çağrısı gerekir)</li>
+              <li>Senkronizasyon OS tarafından</li>
+            </ul>
+          </div>
+        </div>
+
+        <table class="data-table" style="margin-top:1.5rem">
+          <thead>
+            <tr>
+              <th>Mekanizma</th>
+              <th>Yön</th>
+              <th>Açıklama</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">Pipe</td><td>Tek yönlü (ordinary), çift yönlü (named)</td><td>Ebeveyn-çocuk iletişimi; <code>|</code> operatörü</td></tr>
+            <tr><td class="hl">Socket</td><td>Çift yönlü</td><td>IP + port; ağ ve yerel iletişim</td></tr>
+            <tr><td class="hl">RPC</td><td>İstek-cevap</td><td>Uzak fonksiyon çağrısı; stub, marshalling</td></tr>
+            <tr><td class="hl">Shared Memory</td><td>Ortak alan</td><td>POSIX: <code>shm_open()</code>, <code>mmap()</code></td></tr>
+            <tr><td class="hl">Message Queue</td><td>Kuyruk</td><td>send/receive; mailbox/port; asenkron</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 3 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz3">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">Program ile süreç arasındaki fark nedir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">Program disk'teki pasif varlıktır. Süreç bellekteki aktif varlıktır. Bir program çoklu süreç olabilir (aynı anda birden fazla kullanıcı).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="ch2.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Önceki Chapter</div>
+            <div class="title">OS Yapıları</div>
+          </div>
+        </a>
+        <a href="ch4.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Sonraki Chapter</div>
+            <div class="title">Thread'ler</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 3: Süreçler</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const questions = [
+    { q: 'Program ile süreç arasındaki fark nedir?', a: 'Program disk\'teki pasif varlıktır. Süreç bellekteki aktif varlıktır. Bir program çoklu süreç olabilir (aynı anda birden fazla kullanıcı).' },
+    { q: 'PCB\'nin içerdiği bilgiler nelerdir?', a: 'Process state, program counter, CPU registers, scheduling info, memory info, accounting info, I/O status.' },
+    { q: 'Context switch neden overhead\'dir?', a: 'Mevcut sürecin PCB\'ye kaydedilmesi + yeni sürecin yüklenmesi sırasında faydalı iş yapılmaz. Saf kayıptır.' },
+    { q: 'fork() ne döndürür?', a: 'Parent\'a child\'ın PID\'ini (>0), child\'a 0, hata durumunda -1 döndürür.' },
+    { q: 'Zombie ve Orphan süreç nedir?', a: 'Zombie: bitti ama parent wait() yapmadı, PCB var. Orphan: parent bitti, child devam ediyor; init/systemd (PID 1) adopt eder.' },
+  ];
+  initQuiz('quiz3', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>

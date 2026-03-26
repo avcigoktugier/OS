@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1 — Giriş | OS Dersi</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="currentColor" opacity="0.1"/><path d="M7 10h14M7 14h10M7 18h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M19 18l1 1 2-2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    OS Dersi
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="ch1.html" class="active"><span class="ch-num">1</span> Giriş</a></li>
+    <li><a href="ch2.html"><span class="ch-num">2</span> OS Yapıları</a></li>
+    <li><a href="ch3.html"><span class="ch-num">3</span> Süreçler</a></li>
+    <li><a href="ch4.html"><span class="ch-num">4</span> Thread'ler</a></li>
+    <li><a href="ch5.html"><span class="ch-num">5</span> Senkronizasyon</a></li>
+    <li><a href="ch6.html"><span class="ch-num">6</span> CPU Zamanlama</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="ch-page">
+  <div class="ch-page-header">
+    <nav class="ch-breadcrumb" aria-label="breadcrumb">
+      <a href="../index.html">Ana Sayfa</a>
+      <span>›</span>
+      <span>Chapter 1</span>
+    </nav>
+    <h1>💻 Chapter 1: Giriş</h1>
+    <p class="ch-intro">İşletim sisteminin ne olduğunu, bilgisayar donanımıyla nasıl ilişki kurduğunu ve interrupt, storage hiyerarşisi gibi temel kavramları öğren.</p>
+  </div>
+
+  <div class="ch-layout">
+    <!-- TOC -->
+    <aside>
+      <nav class="toc">
+        <h4>Bu Bölümde</h4>
+        <ul class="toc-list">
+          <li><a href="#def">OS Nedir?</a></li>
+          <li><a href="#structure">Sistem Yapısı</a></li>
+          <li><a href="#startup">Başlatma</a></li>
+          <li><a href="#interrupt">Interrupt</a></li>
+          <li><a href="#storage">Depolama Hiyerarşisi</a></li>
+          <li><a href="#dualmode">Dual-Mode</a></li>
+          <li><a href="#environments">Ortamlar</a></li>
+          <li><a href="#quiz">Quiz</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main>
+
+      <!-- OS Definition -->
+      <section class="section" id="def">
+        <div class="section-label">Temel Tanım</div>
+        <h2>İşletim Sistemi Nedir?</h2>
+        <p>İşletim sistemi, kullanıcı ile bilgisayar donanımı arasında <strong>aracı</strong> görevi gören bir programdır. Üç temel hedefi vardır:</p>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-icon">🎯</div>
+            <h4>Kullanıcı Programlarını Çalıştır</h4>
+            <p>Kullanıcının problemlerini çözmeyi kolaylaştırmak için programları yükler ve yönetir.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">🖥️</div>
+            <h4>Kullanım Kolaylığı</h4>
+            <p>Donanımın karmaşıklığını gizleyerek sistemin kullanımını kolaylaştırır.</p>
+          </div>
+          <div class="feature-item">
+            <div class="fi-icon">⚡</div>
+            <h4>Verimli Kaynak Kullanımı</h4>
+            <p>CPU, bellek ve I/O gibi kaynakları adil ve verimli biçimde dağıtır.</p>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>İki Kritik Tanım</h4>
+            <ul>
+              <li><strong>Kaynak Yöneticisi (Resource Allocator):</strong> Tüm kaynakları yönetir; çakışan istekler arasında adil ve verimli kararlar alır.</li>
+              <li><strong>Kontrol Programı (Control Program):</strong> Hataları ve yanlış kullanımı önlemek için program çalışmasını denetler.</li>
+              <li><strong>Kernel:</strong> Bilgisayarda her zaman çalışan TEK programdır. Diğerleri sistem programı veya uygulama programıdır.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Structure -->
+      <section class="section" id="structure">
+        <div class="section-label">Yapı</div>
+        <h2>Bilgisayar Sistemi 4 Bileşeni</h2>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Bilgisayar Sistemi Katmanları (aşağıdan yukarıya)</div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;max-width:500px;margin:0 auto">
+            <div style="background:var(--accent);color:white;border-radius:var(--r-lg);padding:1rem 1.5rem;text-align:center;font-weight:700">
+              👤 Kullanıcılar
+            </div>
+            <div style="height:1.5rem;display:flex;justify-content:center;align-items:center;color:var(--muted);font-size:0.75rem">▼ kullanır</div>
+            <div style="background:var(--green);color:white;border-radius:var(--r-lg);padding:1rem 1.5rem;text-align:center;font-weight:700">
+              📱 Uygulama Programları<br><span style="font-size:0.75rem;opacity:0.85">Word, Chrome, Oyunlar, Derleyiciler</span>
+            </div>
+            <div style="height:1.5rem;display:flex;justify-content:center;align-items:center;color:var(--muted);font-size:0.75rem">▼ üzerinde çalışır</div>
+            <div style="background:var(--orange);color:white;border-radius:var(--r-lg);padding:1rem 1.5rem;text-align:center;font-weight:700">
+              ⚙️ İşletim Sistemi (Kernel)<br><span style="font-size:0.75rem;opacity:0.85">Kaynakları yönetir, donanımı koordine eder</span>
+            </div>
+            <div style="height:1.5rem;display:flex;justify-content:center;align-items:center;color:var(--muted);font-size:0.75rem">▼ yönetir</div>
+            <div style="background:var(--red);color:white;border-radius:var(--r-lg);padding:1rem 1.5rem;text-align:center;font-weight:700">
+              🔧 Donanım<br><span style="font-size:0.75rem;opacity:0.85">CPU, RAM, I/O Aygıtları</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Startup -->
+      <section class="section" id="startup">
+        <div class="section-label">Boot</div>
+        <h2>Bilgisayar Başlatma (Bootstrap)</h2>
+        <p>Güç açıldığında veya yeniden başlatıldığında sistemi ayağa kaldıran süreç:</p>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">1. Bootstrap Program</div>
+            <div class="def-desc">Güç açılışında yüklenen ilk program. ROM veya EPROM'da (firmware) saklanır. Sistemin tüm yönlerini başlatır.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">2. Kernel Yükleme</div>
+            <div class="def-desc">Bootstrap, OS kernel'ini bulur, belleğe yükler ve çalıştırmaya başlar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">3. Init / Systemd</div>
+            <div class="def-desc">Kernel başladıktan sonra sistem süreçlerini ve servislerini başlatır.</div>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-body">
+            <h4>GRUB — Grand Unified Bootloader</h4>
+            <p>Yaygın bootstrap loader; birden fazla disk, sürüm ve kernel seçeneği sunar. Linux sistemlerde önyükleme menüsünü siz görürsünüz.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interrupt -->
+      <section class="section" id="interrupt">
+        <div class="section-label">Donanım</div>
+        <h2>Interrupt (Kesme) Mekanizması</h2>
+        <p>İşletim sistemi <strong>interrupt-driven</strong> (kesme güdümlü) çalışır. Her interrupt kontrolü interrupt servis rutinine transfer eder.</p>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Interrupt Akış Diyagramı</div>
+          <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;align-items:center">
+            <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:var(--r-lg);border:1px solid var(--border);min-width:100px">
+              <div style="font-size:1.8rem">🖥️</div>
+              <div style="font-size:0.75rem;color:var(--muted)">I/O Device</div>
+            </div>
+            <div style="color:var(--accent);font-weight:700;font-size:1.2rem">→<br><span style="font-size:0.65rem;color:var(--muted)">interrupt sinyali</span></div>
+            <div style="text-align:center;padding:1rem;background:var(--accent-hl);border-radius:var(--r-lg);border:2px solid var(--accent);min-width:120px">
+              <div style="font-size:1.8rem">🔔</div>
+              <div style="font-size:0.75rem;color:var(--accent);font-weight:700">CPU durdurulur</div>
+              <div style="font-size:0.65rem;color:var(--muted)">PC kaydedilir</div>
+            </div>
+            <div style="color:var(--accent);font-weight:700;font-size:1.2rem">→<br><span style="font-size:0.65rem;color:var(--muted)">ISR çağrılır</span></div>
+            <div style="text-align:center;padding:1rem;background:var(--green-hl);border-radius:var(--r-lg);border:1px solid var(--green);min-width:120px">
+              <div style="font-size:1.8rem">✅</div>
+              <div style="font-size:0.75rem;color:var(--green);font-weight:700">ISR çalışır</div>
+              <div style="font-size:0.65rem;color:var(--muted)">işlem tamamlanır</div>
+            </div>
+            <div style="color:var(--accent);font-weight:700;font-size:1.2rem">→<br><span style="font-size:0.65rem;color:var(--muted)">devam</span></div>
+            <div style="text-align:center;padding:1rem;background:var(--surface2);border-radius:var(--r-lg);border:1px solid var(--border);min-width:100px">
+              <div style="font-size:1.8rem">▶️</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Program devam eder</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Interrupt Vector</div>
+            <div class="def-desc">Tüm servis rutinlerinin adreslerini içeren tablo. Her interrupt türüne karşılık gelen ISR adresi burada.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Trap / Exception</div>
+            <div class="def-desc">Hata (sıfıra bölme) veya kullanıcı isteğinden (system call) kaynaklanan yazılım kesmesi.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">DMA (Direct Memory Access)</div>
+            <div class="def-desc">Yüksek hızlı I/O için CPU müdahalesiz blok halinde bellek transferi. Her blok için 1 interrupt — her byte için değil. I/O verimliliği artar.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Polling</div>
+            <div class="def-desc">CPU, hangi cihazın interrupt oluşturduğunu sürekli sorgular. Basit ama verimsiz.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Storage Hierarchy -->
+      <section class="section" id="storage">
+        <div class="section-label">Bellek</div>
+        <h2>Depolama Hiyerarşisi</h2>
+        <p>Depolama sistemleri hız, maliyet ve kalıcılığa göre hiyerarşik düzenlenir. Bir seviyeye tıkla:</p>
+
+        <div class="diagram-box">
+          <div class="diagram-title">Depolama Piramidi (hıza göre yukarıdan aşağı)</div>
+          <div class="storage-pyramid">
+            <div class="storage-level" data-storage="reg"
+              style="width:140px;background:var(--red);color:white">
+              ⚡ Register <span>~0.3ns</span>
+            </div>
+            <div class="storage-level" data-storage="cache"
+              style="width:200px;background:var(--orange);color:white">
+              🔥 Cache (L1/L2/L3) <span>~1-10ns</span>
+            </div>
+            <div class="storage-level" data-storage="ram"
+              style="width:270px;background:var(--accent);color:white">
+              💾 Main Memory (RAM) <span>~100ns</span>
+            </div>
+            <div class="storage-level" data-storage="ssd"
+              style="width:340px;background:var(--green);color:white">
+              💿 SSD (Flash) <span>~0.1ms</span>
+            </div>
+            <div class="storage-level" data-storage="hdd"
+              style="width:410px;background:var(--purple);color:white">
+              🖴 Hard Disk (HDD) <span>~5-10ms</span>
+            </div>
+            <div class="storage-level" data-storage="tape"
+              style="width:480px;background:var(--muted);color:white">
+              📼 Optical / Tape <span>saniyeler</span>
+            </div>
+          </div>
+          <div class="storage-info" style="margin-top:1rem;padding:0.75rem 1rem;background:var(--surface2);border-radius:var(--r-md);font-size:var(--text-sm);color:var(--muted);text-align:center;border:1px solid var(--border)">
+            Bir seviyeye tıkla → detay görün
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <h4>Caching İlkesi</h4>
+            <ul>
+              <li>Daha yavaş depolamadaki bilgi, geçici olarak daha hızlı depolamaya kopyalanır.</li>
+              <li>Cache daha küçüktür → cache yönetimi kritik: boyut ve replacement policy.</li>
+              <li><strong>Cache Coherency:</strong> Çoklu CPU'da tüm önbelleklerin en güncel değeri tutması. Donanım garantisi gerektirir.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dual Mode -->
+      <section class="section" id="dualmode">
+        <div class="section-label">Güvenlik</div>
+        <h2>Dual-Mode İşlem</h2>
+        <p>OS kendini ve sistem bileşenlerini korumak için <strong>iki mod</strong> kullanır:</p>
+
+        <div class="ipc-compare">
+          <div class="ipc-card" style="border-top: 3px solid var(--accent)">
+            <h4 style="color:var(--accent)">⚙️ Kernel Mode</h4>
+            <ul>
+              <li>OS kodu çalışır</li>
+              <li>Tüm talimatlar mevcut (ayrıcalıklı)</li>
+              <li>Mode bit = 0</li>
+              <li>System call ile geçiş yapılır</li>
+            </ul>
+          </div>
+          <div class="ipc-card" style="border-top: 3px solid var(--muted)">
+            <h4 style="color:var(--muted)">👤 User Mode</h4>
+            <ul>
+              <li>Kullanıcı kodu çalışır</li>
+              <li>Ayrıcalıklı talimatlar yasak</li>
+              <li>Mode bit = 1</li>
+              <li>System call çıkışında dönülür</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <div class="callout-icon">⏰</div>
+          <div class="callout-body">
+            <h4>Timer — Sonsuz Döngü Engeli</h4>
+            <p>Donanım timer'ı, belirlenen süre sonra interrupt oluşturur. OS bu sayede CPU kontrolünü geri alır ve süresini aşan programları sonlandırır.</p>
+          </div>
+        </div>
+
+        <h3>Multiprogramming vs Timesharing</h3>
+        <div class="def-list">
+          <div class="def-item">
+            <div class="def-term">Multiprogramming</div>
+            <div class="def-desc">Bir iş I/O beklerken başka bir iş CPU'da çalışır. CPU her zaman meşgul → verimlilik artar. Job scheduling gerektirir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Timesharing (Multitasking)</div>
+            <div class="def-desc">CPU çok sık iş değiştirerek (ms bazında) her kullanıcıya etkileşimli deneyim verir. Yanıt süresi genellikle &lt;1 saniyedir.</div>
+          </div>
+          <div class="def-item">
+            <div class="def-term">Virtual Memory</div>
+            <div class="def-desc">İşlemin tamamı bellekte olmadan çalıştırılabilir. Disk, ek bellek olarak kullanılır.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Environments -->
+      <section class="section" id="environments">
+        <div class="section-label">Ortamlar</div>
+        <h2>Hesaplama Ortamları</h2>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ortam</th>
+              <th>Özellikler</th>
+              <th>Örnek</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">Traditional</td><td>Bağımsız; internet bağlantılı</td><td>Masaüstü PC</td></tr>
+            <tr><td class="hl">Mobile</td><td>iOS/Android; GPS/jiroskop; pil optimizasyonu</td><td>iPhone, Android</td></tr>
+            <tr><td class="hl">Distributed</td><td>TCP/IP ağ; heterojen sistemler</td><td>Cluster, Grid</td></tr>
+            <tr><td class="hl">Client-Server</td><td>Sunucu isteklere yanıt verir</td><td>Web server</td></tr>
+            <tr><td class="hl">Peer-to-Peer</td><td>İstemci/sunucu ayrımı yok; eşdeğer node'lar</td><td>BitTorrent, Skype</td></tr>
+            <tr><td class="hl">Virtualization</td><td>OS içinde OS; VMM (Virtual Machine Manager)</td><td>VMware, VirtualBox</td></tr>
+            <tr><td class="hl">Cloud</td><td>SaaS, PaaS, IaaS; virtualization tabanlı</td><td>AWS, Azure</td></tr>
+            <tr><td class="hl">Real-Time Embedded</td><td>Sabit zaman kısıtları; hard/soft</td><td>Araç ECU, Robotik</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Quiz -->
+      <section class="section quiz-section" id="quiz">
+        <h3>🎯 Chapter 1 — Quiz Kartları</h3>
+        <p style="color:var(--muted);font-size:var(--text-sm);margin-bottom:1.5rem">Karta tıkla → cevabı gör. Ok tuşlarıyla ilerle.</p>
+
+        <div id="quiz1">
+          <div class="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="flashcard-q">İşletim sisteminin iki temel tanımı nedir?</div>
+                <div class="flashcard-hint">Tıkla → cevabı gör</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="flashcard-a">1) <strong>Kaynak Yöneticisi:</strong> Tüm kaynakları yönetir; çakışan istekler arasında verimli kararlar alır.<br><br>2) <strong>Kontrol Programı:</strong> Hataları ve yanlış kullanımı önlemek için program çalışmasını denetler.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button class="btn btn-outline" data-prev>← Önceki</button>
+            <span class="quiz-progress">1 / 5</span>
+            <button class="btn btn-primary" data-next>Sonraki →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chapter Navigation -->
+      <nav class="ch-nav-footer" aria-label="Chapter navigation">
+        <a href="../index.html" class="ch-nav-btn">
+          <span>←</span>
+          <div>
+            <div class="label">Geri dön</div>
+            <div class="title">Ana Sayfa</div>
+          </div>
+        </a>
+        <a href="ch2.html" class="ch-nav-btn next">
+          <div style="text-align:right">
+            <div class="label">Sonraki Chapter</div>
+            <div class="title">OS Yapıları</div>
+          </div>
+          <span>→</span>
+        </a>
+      </nav>
+
+    </main>
+  </div><!-- .ch-layout -->
+</div><!-- .ch-page -->
+
+<footer>
+  <p>İşletim Sistemleri Konu Anlatımı &mdash; Chapter 1: Giriş</p>
+  <p style="margin-top:0.5rem"><a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a></p>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const questions = [
+    { q: 'İşletim sisteminin iki temel tanımı nedir?', a: '1) Kaynak Yöneticisi: kaynakları adil ve verimli yönetir. 2) Kontrol Programı: hataları ve yanlış kullanımı önlemek için programları denetler.' },
+    { q: 'Bootstrap programı nedir ve nerede saklanır?', a: 'Güç açılışında yüklenen ilk program. ROM/EPROM (firmware) içinde saklanır. Kernel\'i yükleyip başlatır.' },
+    { q: 'DMA nedir, neden kullanılır?', a: 'Direct Memory Access — CPU müdahalesiz cihaz-bellek veri transferi. Her BLOK için 1 interrupt (her byte için değil) → I/O verimliliği artar.' },
+    { q: 'Multiprogramming ile Timesharing arasındaki fark nedir?', a: 'Multiprogramming: CPU verimliliği için iş beklerken başka iş çalıştırır. Timesharing: çok sık iş değiştirerek etkileşimli kullanıcı deneyimi sağlar (yanıt <1sn).' },
+    { q: 'Dual-mode\'un amacı ve mode bit\'in rolü nedir?', a: 'OS\'u ve sistem bileşenlerini korumak. Mode bit: 0=kernel, 1=user. System call kernel moda geçiş tetikler; dönüşte user moduna dönülür.' },
+  ];
+  initQuiz('quiz1', questions);
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
